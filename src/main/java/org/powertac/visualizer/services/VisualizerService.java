@@ -80,6 +80,7 @@ public class VisualizerService
   
   private LocalVisualizerProxy proxy;
   private boolean initialized = false;
+  private boolean running = false;
 
   @Autowired
   private MessageDispatcher dispatcher;
@@ -95,6 +96,7 @@ public class VisualizerService
    */
   public void init ()
   {
+    System.out.println("create and init proxy");
     proxy = new LocalVisualizerProxy();
     proxy.init(this);
   }
@@ -123,6 +125,7 @@ public class VisualizerService
   // shut down the queue at end-of-game, wait 30 seconds, go again.
   public void shutDown ()
   {
+    System.out.println("shut down proxy");
     proxy.shutDown();
     Timer restartTimer = new Timer();
     restartTimer.schedule(new TimerTask () {
@@ -130,7 +133,7 @@ public class VisualizerService
       public void run () {
         init();
       }
-    }, 30000);
+    }, 30000l);
   }
 
   public void receiveMessage (Object msg)
@@ -151,7 +154,10 @@ public class VisualizerService
                + " Received message is NULL!");
     }
     // end-of-game check
-    if (visualizerBean.isFinished()) {
+    if (!running && visualizerBean.isRunning()) {
+      running = true;
+    }
+    if (running && visualizerBean.isFinished()) {
       System.out.println("Game finished");
       shutDown();
     }      
@@ -209,7 +215,6 @@ public class VisualizerService
     //  new TreeSet<VisualizerMessageListener>();
     
     VisualizerService host;
-    DefaultMessageListenerContainer container;
 
     LocalVisualizerProxy ()
     {
@@ -219,6 +224,7 @@ public class VisualizerService
     // set up the jms queue
     void init (VisualizerService host)
     {
+      System.out.println("Server URL: " + getServerUrl() + ", queue: " + getQueueName());
       this.host = host;
       
       if (connectionFactory instanceof PooledConnectionFactory) {
@@ -251,7 +257,7 @@ public class VisualizerService
       System.out.println("Queue " + getQueueName() + " created");
 
       // register host as listener
-      container = new DefaultMessageListenerContainer();
+      DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
       container.setConnectionFactory(connectionFactory);
       container.setDestinationName(getQueueName());
       container.setMessageListener(host);
@@ -272,7 +278,7 @@ public class VisualizerService
     
     void shutDown ()
     {
-      container.shutdown();
+      //container.shutdown();
     }
   }
 }

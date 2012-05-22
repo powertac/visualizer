@@ -219,6 +219,16 @@
 	<version>6.1.26</version>
 	<configuration>
 	  <contextPath>/visualizer</contextPath>
+          <systemProperties>
+            <systemProperty>
+              <name>visualizerService.serverUrl</name>
+              <value>${serverUrl}</value>
+            </systemProperty>
+            <systemProperty>
+              <name>visualizerService.queueName</name>
+              <value>${queueName}</value>
+            </systemProperty>
+          </systemProperties>
 	</configuration>
       </plugin>
 
