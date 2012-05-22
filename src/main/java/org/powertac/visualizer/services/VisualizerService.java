@@ -17,6 +17,8 @@
 package org.powertac.visualizer.services;
 
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Executor;
 
 import javax.annotation.Resource;
@@ -97,11 +99,12 @@ public class VisualizerService
     proxy.init(this);
   }
   
+  // once-per-game initialization
   public void initOnce ()
   {
-    if (initialized)
-      return;
-    initialized = true;
+    //if (initialized)
+    //  return;
+    //initialized = true;
     
     System.out.println("initOnce()");
     visualizerBean.newRun();
@@ -116,10 +119,23 @@ public class VisualizerService
       init.initialize();
     }
   }
+  
+  // shut down the queue at end-of-game, wait 30 seconds, go again.
+  public void shutDown ()
+  {
+    proxy.shutDown();
+    Timer restartTimer = new Timer();
+    restartTimer.schedule(new TimerTask () {
+      @Override
+      public void run () {
+        init();
+      }
+    }, 30000);
+  }
 
   public void receiveMessage (Object msg)
   {
-    // one-time initialization...
+    // once-per-game initialization...
     if (msg instanceof Competition)
       initOnce();
     
@@ -134,7 +150,11 @@ public class VisualizerService
       log.warn("Counter:" + visualizerBean.getMessageCount()
                + " Received message is NULL!");
     }
-
+    // end-of-game check
+    if (visualizerBean.isFinished()) {
+      System.out.println("Game finished");
+      shutDown();
+    }      
   }
 
   // JMS message input processing
@@ -189,6 +209,7 @@ public class VisualizerService
     //  new TreeSet<VisualizerMessageListener>();
     
     VisualizerService host;
+    DefaultMessageListenerContainer container;
 
     LocalVisualizerProxy ()
     {
@@ -230,7 +251,7 @@ public class VisualizerService
       System.out.println("Queue " + getQueueName() + " created");
 
       // register host as listener
-      DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
+      container = new DefaultMessageListenerContainer();
       container.setConnectionFactory(connectionFactory);
       container.setDestinationName(getQueueName());
       container.setMessageListener(host);
@@ -247,6 +268,11 @@ public class VisualizerService
                                                  Session.AUTO_ACKNOWLEDGE);
       session.createQueue(queueName);
       log.info("JMS Queue " + queueName + " created");
+    }
+    
+    void shutDown ()
+    {
+      container.shutdown();
     }
   }
 }

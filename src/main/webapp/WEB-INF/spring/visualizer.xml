@@ -38,6 +38,10 @@
   
   <bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor" p:corePoolSize="5" p:maxPoolSize="25"/>
 
+  <!-- externalized properties -->
+  <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <property name="locations" value="visualizer.properties"/>
+  </bean>
 	<!-- .................BEANS......................... NOT USED? -->
 	<!-- Each property represents context-relative path to a particular image. -->
 	<bean id="imageBean" class="org.powertac.visualizer.beans.ImageBean">
@@ -50,6 +54,8 @@
         <bean
           id="visualizerService"
           class="org.powertac.visualizer.services.VisualizerService">
+          <property name="serverUrl" value="${visualizerService.serverUrl}"/>
+          <property name="queueName" value="${visualizerService.queueName}"/>
         </bean>
 	<!-- <bean id="visualizerBean" class="org.powertac.visualizer.beans.VisualizerBean"/>
 	 -->
