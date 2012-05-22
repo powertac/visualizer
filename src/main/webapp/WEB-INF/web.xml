@@ -14,6 +14,11 @@
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
 	</listener>
 
+        <!-- 
+        <listener>
+                <listener-class>org.powertac.visualizer.services.VisualizerService</listener-class>
+        </listener> -->
+
 	<!-- PRIMEFACES THEME -->
 	<context-param>
 		<param-name>primefaces.THEME</param-name>

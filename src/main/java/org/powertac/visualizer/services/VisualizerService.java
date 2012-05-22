@@ -17,7 +17,6 @@
 package org.powertac.visualizer.services;
 
 import java.util.List;
-import java.util.TreeSet;
 import java.util.concurrent.Executor;
 
 import javax.annotation.Resource;
@@ -32,17 +31,17 @@ import javax.jms.TextMessage;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.pool.PooledConnectionFactory;
 import org.apache.log4j.Logger;
+import org.powertac.common.Competition;
 import org.powertac.common.XMLMessageConverter;
-import org.powertac.common.interfaces.VisualizerMessageListener;
-import org.powertac.common.interfaces.VisualizerProxy;
+//import org.powertac.common.interfaces.VisualizerMessageListener;
+//import org.powertac.common.interfaces.VisualizerProxy;
 import org.powertac.visualizer.MessageDispatcher;
 import org.powertac.visualizer.VisualizerApplicationContext;
 import org.powertac.visualizer.beans.VisualizerBean;
 import org.powertac.visualizer.interfaces.Initializable;
-import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.Lifecycle;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.stereotype.Service;
 
@@ -56,7 +55,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class VisualizerService
-  implements VisualizerMessageListener, ApplicationContextAware, MessageListener
+  implements MessageListener, InitializingBean
 {
   static private Logger log = Logger.getLogger(VisualizerService.class
           .getName());
@@ -73,9 +72,12 @@ public class VisualizerService
   @Autowired
   private VisualizerBean visualizerBean;
 
-  private boolean alreadyRegistered = false;
+  //private boolean alreadyRegistered = false;
   private String serverUrl = "tcp://localhost:61616";
   private String queueName = "remote-visualizer";
+  
+  private LocalVisualizerProxy proxy;
+  private boolean initialized = false;
 
   @Autowired
   private MessageDispatcher dispatcher;
@@ -89,16 +91,20 @@ public class VisualizerService
    * Should be called before simulator run in order to prepare/reset
    * Visualizer beans and register with the new simulator instance.
    */
-  public void init (VisualizerProxy visualizerProxy)
+  public void init ()
   {
-
+    proxy = new LocalVisualizerProxy();
+    proxy.init(this);
+  }
+  
+  public void initOnce ()
+  {
+    if (initialized)
+      return;
+    initialized = true;
+    
+    System.out.println("initOnce()");
     visualizerBean.newRun();
-
-    // Register Visualizer with VisualizerProxy service
-    if (!alreadyRegistered) {
-      visualizerProxy.registerVisualizerMessageListener(this);
-      alreadyRegistered = true;
-    }
 
     // visualizerLogService.startLog(visualizerBean.getVisualizerRunCount());
 
@@ -113,7 +119,10 @@ public class VisualizerService
 
   public void receiveMessage (Object msg)
   {
-
+    // one-time initialization...
+    if (msg instanceof Competition)
+      initOnce();
+    
     visualizerBean.incrementMessageCounter();
 
     if (msg != null) {
@@ -122,7 +131,6 @@ public class VisualizerService
       dispatcher.routeMessage(msg);
     }
     else {
-
       log.warn("Counter:" + visualizerBean.getMessageCount()
                + " Received message is NULL!");
     }
@@ -148,6 +156,11 @@ public class VisualizerService
     log.debug("onMessage(String) - received message of type " + message.getClass().getSimpleName());
     receiveMessage(message);
   }
+
+  public void afterPropertiesSet () throws Exception
+  {
+    init();
+  }
   
   // URL and queue name methods
   public String getQueueName ()
@@ -169,17 +182,11 @@ public class VisualizerService
   {
     serverUrl = newUrl;
   }
-  
-  public void setApplicationContext (ApplicationContext applicationContext)
-    throws BeansException
-  {
-    
-  }
 
-  class LocalVisualizerProxy implements VisualizerProxy
+  class LocalVisualizerProxy //implements VisualizerProxy
   {
-    TreeSet<VisualizerMessageListener> listeners =
-      new TreeSet<VisualizerMessageListener>();
+    //TreeSet<VisualizerMessageListener> listeners =
+    //  new TreeSet<VisualizerMessageListener>();
     
     VisualizerService host;
 
@@ -211,14 +218,16 @@ public class VisualizerService
         }
         catch (JMSException e) {
           log.info("JMS message broker not ready - delay and retry");
+          System.out.println("JMS message broker not ready - delay and retry");
           try {
-            Thread.sleep(20000);
+            Thread.sleep(10000);
           }
           catch (InterruptedException e1) {
             // ignore exception
           }
         }
       }
+      System.out.println("Queue " + getQueueName() + " created");
 
       // register host as listener
       DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
@@ -239,18 +248,5 @@ public class VisualizerService
       session.createQueue(queueName);
       log.info("JMS Queue " + queueName + " created");
     }
-
-    // dummy method
-    public void
-      registerVisualizerMessageListener (VisualizerMessageListener listener)
-    {
-      //listeners.add(listener);
-    }
-
-    public void forwardMessage (Object message)
-    {
-      // dummy method
-    }
-
   }
 }
