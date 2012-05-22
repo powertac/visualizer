@@ -38,9 +38,9 @@
   
   <bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor" p:corePoolSize="5" p:maxPoolSize="25"/>
 
-  <!-- externalized properties -->
+  <!-- externalized properties
   <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-  </bean>
+  </bean> -->
   
 	<!-- .................BEANS......................... NOT USED? -->
 	<!-- Each property represents context-relative path to a particular image. -->
