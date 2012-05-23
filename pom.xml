@@ -229,11 +229,11 @@
           <systemProperties>
             <systemProperty>
               <name>visualizerService.serverUrl</name>
-              <value>${serverUrl}</value>
+              <value>${visualizerService.serverUrl}</value>
             </systemProperty>
             <systemProperty>
               <name>visualizerService.queueName</name>
-              <value>${queueName}</value>
+              <value>${visualizerService.queueName}</value>
             </systemProperty>
           </systemProperties>
 	</configuration>
