@@ -164,6 +164,7 @@ public class VisualizerService
   }
 
   // JMS message input processing
+  @Override
   public void onMessage (Message message)
   {
     if (message instanceof TextMessage) {
@@ -183,9 +184,17 @@ public class VisualizerService
     receiveMessage(message);
   }
 
+  @Override
   public void afterPropertiesSet () throws Exception
   {
-    init();
+    Timer initTimer = new Timer();
+    // delay to let deployment complete
+    initTimer.schedule(new TimerTask () {
+      @Override
+      public void run () {
+        init();
+      }
+    }, 20000l);
   }
   
   // URL and queue name methods
