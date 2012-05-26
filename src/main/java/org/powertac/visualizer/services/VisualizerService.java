@@ -16,6 +16,7 @@
 
 package org.powertac.visualizer.services;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -34,6 +35,7 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.pool.PooledConnectionFactory;
 import org.apache.log4j.Logger;
 import org.powertac.common.Competition;
+import org.powertac.common.msg.VisualizerStatusRequest;
 import org.powertac.common.XMLMessageConverter;
 //import org.powertac.common.interfaces.VisualizerMessageListener;
 //import org.powertac.common.interfaces.VisualizerProxy;
@@ -43,7 +45,8 @@ import org.powertac.visualizer.beans.VisualizerBean;
 import org.powertac.visualizer.interfaces.Initializable;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.Lifecycle;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.MessageCreator;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.stereotype.Service;
 
@@ -70,6 +73,9 @@ public class VisualizerService
   
   @Autowired
   XMLMessageConverter converter;
+  
+  @Autowired
+  JmsTemplate template;
 
   @Autowired
   private VisualizerBean visualizerBean;
@@ -77,10 +83,19 @@ public class VisualizerService
   //private boolean alreadyRegistered = false;
   private String serverUrl = "tcp://localhost:61616";
   private String queueName = "remote-visualizer";
-  
+
+  // Server JMS Queue Name
+  private String serverQueueName = "serverInput";
+
   private LocalVisualizerProxy proxy;
-  private boolean initialized = false;
+  //private boolean initialized = false;
   private boolean running = false;
+  
+  // ping parameters
+  private long pingInitialDelay = 40000l;
+  private long pingPeriod = 20000l;
+  private long lastMsgTime = 0l;
+  private Timer pingTimer = null;
 
   @Autowired
   private MessageDispatcher dispatcher;
@@ -99,6 +114,38 @@ public class VisualizerService
     System.out.println("create and init proxy");
     proxy = new LocalVisualizerProxy();
     proxy.init(this);
+    
+    // set up liveness probe
+    lastMsgTime = new Date().getTime() + pingInitialDelay;
+    pingTimer = new Timer();
+    pingTimer.schedule(new TimerTask() {
+      @Override
+      public void run ()
+      {
+        long now = new Date().getTime();
+        long silence = now - lastMsgTime;
+        if (silence > pingPeriod) {
+          // send a probe
+          try {
+            proxy.sendMessage(new VisualizerStatusRequest());
+            System.out.println("ping sent");
+          }
+          catch (Exception ex) {
+            System.out.println("caught " + ex.toString());
+            pingTimer.cancel();
+            init();
+            return;
+          }
+        }
+        if (silence > pingInitialDelay) {
+          // assume server is dead
+          System.out.println("Server does not respond to ping");
+          pingTimer.cancel();
+          init();
+          return;
+        }
+      }
+    }, pingInitialDelay, pingPeriod);
   }
   
   // once-per-game initialization
@@ -167,6 +214,7 @@ public class VisualizerService
   @Override
   public void onMessage (Message message)
   {
+    lastMsgTime = new Date().getTime();
     if (message instanceof TextMessage) {
       try {
         log.debug("onMessage(Message) - receiving a message");
@@ -178,10 +226,11 @@ public class VisualizerService
   }
 
   private void onMessage (String xml) {
-    //log.info("onMessage(String) - received message:\n" + xml);
+    log.info("onMessage(String) - received message:\n" + xml);
     Object message = converter.fromXML(xml);
     log.debug("onMessage(String) - received message of type " + message.getClass().getSimpleName());
-    receiveMessage(message);
+    if (!(message instanceof VisualizerStatusRequest))
+      receiveMessage(message);
   }
 
   @Override
@@ -283,6 +332,19 @@ public class VisualizerService
                                                  Session.AUTO_ACKNOWLEDGE);
       session.createQueue(queueName);
       log.info("JMS Queue " + queueName + " created");
+    }
+
+    public void sendMessage (Object msg)
+    {
+      final String text = converter.toXML(msg);
+      template.send(serverQueueName,
+                    new MessageCreator() {
+        @Override
+        public Message createMessage (Session session) throws JMSException {
+          TextMessage message = session.createTextMessage(text);
+          return message;
+        }
+      });
     }
     
     void shutDown ()
