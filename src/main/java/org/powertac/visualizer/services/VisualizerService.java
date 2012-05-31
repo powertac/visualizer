@@ -194,6 +194,8 @@ public class VisualizerService
     if (msg != null) {
       log.debug("Counter: " + visualizerBean.getMessageCount()
                 + ", Got message: " + msg.getClass().getName());
+      System.out.println("Counter: " + visualizerBean.getMessageCount()
+                + ", Got message: " + msg.getClass().getName());
       dispatcher.routeMessage(msg);
     }
     else {
@@ -303,7 +305,7 @@ public class VisualizerService
         }
         catch (JMSException e) {
           log.info("JMS message broker not ready - delay and retry");
-          System.out.println("JMS message broker not ready - delay and retry");
+          //System.out.println("JMS message broker not ready - delay and retry");
           try {
             Thread.sleep(10000);
           }
