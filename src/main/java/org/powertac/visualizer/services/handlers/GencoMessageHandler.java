@@ -11,6 +11,7 @@ import org.powertac.common.TariffSpecification;
 import org.powertac.visualizer.MessageDispatcher;
 import org.powertac.visualizer.domain.genco.Genco;
 import org.powertac.visualizer.interfaces.Initializable;
+import org.powertac.visualizer.services.BrokerService;
 import org.powertac.visualizer.services.GencoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,9 @@ public class GencoMessageHandler implements Initializable {
 	private MessageDispatcher router;
 	@Autowired
 	private GencoService gencoService;
+	
+	@Autowired
+	private BrokerService brokerService;
 
 	public void initialize() {
 		for (Class<?> clazz : Arrays.asList(CashPosition.class, MarketTransaction.class, MarketPosition.class)) {
@@ -40,7 +44,9 @@ public class GencoMessageHandler implements Initializable {
 		
 
 		// only care about the wholesale broker
-		if (broker.isWholesale()) {
+		//if (broker.isWholesale()) {
+		//hard-coding for JMS: broker is a wholesale broker if it is not listed in broker service collection...
+		if(brokerService.findBrokerByName(broker.getUsername())==null){
 			Genco genco = gencoService.findGencoByUsername(broker.getUsername());
 			if (genco == null) {
 				genco = gencoService.addGenco(broker);
@@ -53,7 +59,7 @@ public class GencoMessageHandler implements Initializable {
 		Broker broker = transaction.getBroker();
 
 		// only care about the wholesale broker
-		if (broker.isWholesale()) {
+		if(brokerService.findBrokerByName(broker.getUsername())==null){
 			Genco genco = gencoService.findGencoByUsername(broker.getUsername());
 			genco.findWholesaleDataByTimeslot(transaction.getTimeslot()).addMarketTransaction(transaction);
 		}
@@ -63,7 +69,7 @@ public class GencoMessageHandler implements Initializable {
 		Broker broker = position.getBroker();
 
 		// only care about the wholesale broker
-		if (broker.isWholesale()) {
+		if(brokerService.findBrokerByName(broker.getUsername())==null){
 			Genco genco = gencoService.findGencoByUsername(broker.getUsername());
 			genco.findWholesaleDataByTimeslot(position.getTimeslot()).addMarketPosition(position);
 		}

@@ -36,6 +36,7 @@ import org.apache.activemq.pool.PooledConnectionFactory;
 import org.apache.log4j.Logger;
 import org.powertac.common.Competition;
 import org.powertac.common.msg.VisualizerStatusRequest;
+import org.powertac.common.repo.DomainRepo;
 import org.powertac.common.XMLMessageConverter;
 //import org.powertac.common.interfaces.VisualizerMessageListener;
 //import org.powertac.common.interfaces.VisualizerProxy;
@@ -166,6 +167,13 @@ public class VisualizerService
     for (Initializable init: initializers) {
       log.debug("initializing..." + init.getClass().getName());
       init.initialize();
+    }
+    
+    List<DomainRepo> repos =
+  	      VisualizerApplicationContext.listBeansOfType(DomainRepo.class);
+  for (DomainRepo repo: repos) {
+      log.debug("recycling..." + repos.getClass().getName());
+      repo.recycle();
     }
   }
   
