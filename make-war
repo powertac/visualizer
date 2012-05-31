@@ -1,0 +1,9 @@
+#!/bin/bash
+# make-war suffix queue-name
+# 
+# assumes you have already done mvn clean compile
+
+mvn -DvisualizerService.serverUrl=tcp://tac"$1".cs.umn.edu:61616 \
+    -DvisualizerService.queueName="$2""$1".q \
+    war:war
+mv target/visualizer*.war viz"$1".war
