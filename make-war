@@ -1,7 +1,11 @@
 #!/bin/bash
-# make-war suffix queue-name
-# 
-# assumes you have already done mvn clean compile
+# make-war hostname-suffix queue-name-prefix
+#
+# Creates a .war file to deploy on some tomcat that interacts with
+# a sim server running on a host identified by hostname-suffix. The
+# visualizer will interact with the sim server through a queue named
+# [queue-name-prefix][host-suffix].q.
+# Assumes you have already done mvn clean compile.
 
 mvn -DvisualizerService.serverUrl=tcp://tac"$1".cs.umn.edu:61616 \
     -DvisualizerService.queueName="$2""$1".q \
