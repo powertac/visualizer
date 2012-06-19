@@ -36,6 +36,7 @@ import org.apache.activemq.pool.PooledConnectionFactory;
 import org.apache.log4j.Logger;
 import org.powertac.common.Competition;
 import org.powertac.common.msg.VisualizerStatusRequest;
+import org.powertac.common.repo.DomainRepo;
 import org.powertac.common.XMLMessageConverter;
 //import org.powertac.common.interfaces.VisualizerMessageListener;
 //import org.powertac.common.interfaces.VisualizerProxy;
@@ -167,6 +168,13 @@ public class VisualizerService
       log.debug("initializing..." + init.getClass().getName());
       init.initialize();
     }
+    
+    List<DomainRepo> repos =
+  	      VisualizerApplicationContext.listBeansOfType(DomainRepo.class);
+  for (DomainRepo repo: repos) {
+      log.debug("recycling..." + repos.getClass().getName());
+      repo.recycle();
+    }
   }
   
   // shut down the queue at end-of-game, wait 30 seconds, go again.
@@ -193,6 +201,8 @@ public class VisualizerService
 
     if (msg != null) {
       log.debug("Counter: " + visualizerBean.getMessageCount()
+                + ", Got message: " + msg.getClass().getName());
+      System.out.println("Counter: " + visualizerBean.getMessageCount()
                 + ", Got message: " + msg.getClass().getName());
       dispatcher.routeMessage(msg);
     }
@@ -303,7 +313,7 @@ public class VisualizerService
         }
         catch (JMSException e) {
           log.info("JMS message broker not ready - delay and retry");
-          System.out.println("JMS message broker not ready - delay and retry");
+          //System.out.println("JMS message broker not ready - delay and retry");
           try {
             Thread.sleep(10000);
           }

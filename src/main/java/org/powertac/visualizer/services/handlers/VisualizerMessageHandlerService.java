@@ -11,6 +11,7 @@ import org.powertac.common.BankTransaction;
 import org.powertac.common.CashPosition;
 import org.powertac.common.ClearedTrade;
 import org.powertac.common.Competition;
+import org.powertac.common.CustomerInfo;
 import org.powertac.common.DistributionTransaction;
 import org.powertac.common.MarketPosition;
 import org.powertac.common.MarketTransaction;
@@ -35,6 +36,7 @@ import org.powertac.common.msg.TariffStatus;
 import org.powertac.common.msg.TariffUpdate;
 import org.powertac.common.msg.TimeslotComplete;
 import org.powertac.common.msg.TimeslotUpdate;
+import org.powertac.common.repo.CustomerRepo;
 import org.powertac.visualizer.MessageDispatcher;
 import org.powertac.visualizer.VisualizerApplicationContext;
 import org.powertac.visualizer.beans.AppearanceListBean;
@@ -63,10 +65,21 @@ public class VisualizerMessageHandlerService implements Initializable {
 	@Autowired
 	private MessageDispatcher router;
 	
+	@Autowired
+	private CustomerRepo customerRepo;
+	
 
-	public void handleMessage(Competition competition) {
+	public void handleMessage(Competition comp) {
 		visualizerBean.setRunning(true);
-		visualizerBean.setCompetition(competition);
+		visualizerBean.setCompetition(comp);
+		
+		// comp needs to be the "current competition"
+				Competition.setCurrent(comp);
+
+				// record the customers and brokers
+				for (CustomerInfo customer : comp.getCustomers()) {
+					customerRepo.add(customer);
+				}
 	}
 
 	public void handleMessage(TimeslotUpdate timeslotUpdate) {
