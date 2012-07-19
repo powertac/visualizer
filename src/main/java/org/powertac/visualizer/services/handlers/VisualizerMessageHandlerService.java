@@ -84,6 +84,9 @@ public class VisualizerMessageHandlerService implements Initializable {
 
 	public void handleMessage(TimeslotUpdate timeslotUpdate) {
 		visualizerBean.setTimeslotUpdate(timeslotUpdate);
+		
+		//millis: should include timezone in the future.
+		visualizerBean.setCurrentMillis(timeslotUpdate.getPostedTime().getMillis());
 
 		// for the first timeslot:
 		if (visualizerBean.getFirstTimeslotInstant() == null)
@@ -127,7 +130,7 @@ public class VisualizerMessageHandlerService implements Initializable {
 		List<TimeslotCompleteActivation> activators = VisualizerApplicationContext.listBeansOfType(TimeslotCompleteActivation.class);
 		for (TimeslotCompleteActivation active : activators) {
 			log.debug("activating..." + active.getClass().getSimpleName());
-			active.activate(complete.getTimeslotIndex());
+			active.activate(complete.getTimeslotIndex(), visualizerBean.getTimeslotUpdate().getPostedTime());
 		}
 
 		// new day? if so, make new day overview:
@@ -152,26 +155,6 @@ public class VisualizerMessageHandlerService implements Initializable {
 
 	public void handleMessage(SimPause simPause) {
 		// TODO
-	}
-
-	public void handleMessage(WeatherReport weatherReport) {
-
-		if (weatherReport.getCurrentTimeslot() != null) {
-			log.debug("\nStart Instant: " + weatherReport.getCurrentTimeslot().getStartInstant());
-			visualizerBean.setWeatherReport(weatherReport);
-		} else {
-			log.debug("Timeslot for Weather report object is null!!");
-		}
-
-		log.debug("CLOUD COVER: " + weatherReport.getCloudCover() + " TEMP: " + weatherReport.getTemperature() + "W DIR:" + weatherReport.getWindDirection() + "W SPEED:" + weatherReport.getWindSpeed());
-
-	}
-
-	public void handleMessage(WeatherForecast weatherForecast) {
-		log.debug("\nCurrent timeslot:\n Serial number: " + weatherForecast.getCurrentTimeslot().getSerialNumber() + " ID:" + weatherForecast.getCurrentTimeslot().getId() + " Start instant: " + weatherForecast.getCurrentTimeslot().getStartInstant());
-		visualizerBean.setWeatherForecast(weatherForecast);
-		weatherForecast.getPredictions();
-		// TODO !!!!!!!!!! FORECAST
 	}
 
 	public void handleMessage(BankTransaction bankTransaction) {
@@ -220,7 +203,7 @@ public class VisualizerMessageHandlerService implements Initializable {
 	}
 
 	public void initialize() {
-		for (Class<?> clazz : Arrays.asList(DistributionReport.class, SimResume.class,SimEnd.class, MarketPosition.class, MarketTransaction.class, BankTransaction.class, WeatherForecast.class, WeatherReport.class, SimPause.class, SimStart.class,
+		for (Class<?> clazz : Arrays.asList(DistributionReport.class, SimResume.class,SimEnd.class, MarketPosition.class, MarketTransaction.class, BankTransaction.class, SimPause.class, SimStart.class,
 				TimeslotComplete.class, TimeslotUpdate.class, Competition.class, TariffExpire.class, TariffRevoke.class, TariffStatus.class, TariffUpdate.class)) {
 			router.registerMessageHandler(this, clazz);
 		}

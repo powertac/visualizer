@@ -12,22 +12,117 @@ import org.springframework.stereotype.Service;
 @Service
 public class WebCompetitionControlService
 {
+  static private Logger log = Logger
+          .getLogger(WebCompetitionControlService.class);
+
+  @Autowired
+  private VisualizerResourceLoaderService resourceLoader;
+
+  @Autowired
+  private CompetitionSetup css;
+
+  @Autowired
+  private CompetitionControl competitionControl;
+
+  @Autowired
+  private VisualizerService visualizerService;
+
+  @Autowired
+  private GameParamatersBean gameParamaters;
+
+  @Autowired
+  private VisualizerProxy visualizerProxy;
 
   private String message;
 
   public void runSim ()
   {
-    message = "Unable to run a sim game in the tournament config";
+    if (!competitionControl.isRunning()) {
+
+      visualizerService.init(visualizerProxy);
+
+      List<String> names = new ArrayList<String>();
+      for (Iterator iterator = gameParamaters.getBrokers().iterator(); iterator
+              .hasNext();) {
+        FakeBroker type = (FakeBroker) iterator.next();
+        names.add(type.getName());
+      }
+      // web components treat empty forms as "", not null.
+      String boot =
+        gameParamaters.getBootstrapData().equals("")? null: gameParamaters
+                .getBootstrapData();
+      String serverConfig =
+        gameParamaters.getServerConfig().equals("")? null: gameParamaters
+                .getServerConfig();
+      String jmsUrl =
+        gameParamaters.getJmsUrl().equals("")? null: gameParamaters.getJmsUrl();
+      String logSuffix =
+        gameParamaters.getLogSuffix().equals("")? null: gameParamaters
+                .getLogSuffix();
+
+      System.out.println(boot + serverConfig + jmsUrl + logSuffix + names);
+
+      String result =
+        css.simSession(boot, serverConfig, jmsUrl, logSuffix, names, null);
+
+      if (result == null) {
+        message = "Simulation started.";
+      }
+      else {
+        message = "ERROR: " + result;
+      }
+
+    }
+    else {
+      message =
+        "Unable to run a sim game. The competition is already in progress.";
+    }
   }
 
   public void runBoot ()
   {
-    message = "Unable to run a bootstrap gamein the tournament config.";
+    if (!competitionControl.isRunning()) {
+
+      visualizerService.init(visualizerProxy);
+
+      // web components treat empty forms as "", not null.
+      String bootFilename =
+        gameParamaters.getBootstrapFilename().equals("")? null: gameParamaters
+                .getBootstrapFilename();
+      String serverConfig =
+        gameParamaters.getServerConfig().equals("")? null: gameParamaters
+                .getServerConfig();
+      String logSuffix =
+        gameParamaters.getLogSuffix().equals("")? null: gameParamaters
+                .getLogSuffix();
+
+      System.out.println(bootFilename + serverConfig + logSuffix);
+
+      String result = css.bootSession(bootFilename, serverConfig, logSuffix);
+
+      if (result == null) {
+
+        message = "Bootstrap mode started.";
+      }
+      else {
+        message = "ERROR: " + result;
+      }
+    }
+    else {
+      message =
+        "Unable to run a bootstrap game. The competition is already in progress.";
+    }
   }
 
   public void shutDown ()
   {
-    message = "There is no running game to shut down.";
+    if (competitionControl.isRunning()) {
+      competitionControl.shutDown();
+      message = "Shut down is complete.";
+    }
+    else {
+      message = "There is no running game to shut down.";
+    }
   }
 
   public String getMessage ()

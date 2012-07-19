@@ -39,8 +39,6 @@ public class VisualizerBean implements Serializable {
 	private Instant firstTimeslotInstant;
 	private TimeslotUpdate timeslotUpdate;
 	private String simulationStatus;
-	private WeatherReport weatherReport;
-	private WeatherForecast weatherForecast;
 	private int currentTimeslotSerialNumber;
 	private int relativeTimeslotIndex;
 	private int week;
@@ -49,6 +47,7 @@ public class VisualizerBean implements Serializable {
 	private boolean finished;
 	private boolean running;
 	private int firstTimeslotIndex;
+	private long currentMillis;
 
 	@Autowired
 	private AppearanceListBean appearanceList;
@@ -94,8 +93,6 @@ public class VisualizerBean implements Serializable {
 
 		timeslotUpdate = null;
 		simulationStatus = null;
-		weatherReport = null;
-		weatherForecast = null;
 		currentTimeslotSerialNumber = -1;
 		relativeTimeslotIndex = -1;
 		week = -1;
@@ -104,6 +101,7 @@ public class VisualizerBean implements Serializable {
 		finished = false;
 		running = false;
 		firstTimeslotIndex = -1;
+		currentMillis = 0;
 
 	}
 
@@ -121,6 +119,7 @@ public class VisualizerBean implements Serializable {
 
 	public TimeslotUpdate getTimeslotUpdate() {
 		return timeslotUpdate;
+		
 	}
 
 	public void setTimeslotUpdate(TimeslotUpdate timeslotUpdate) {
@@ -141,22 +140,6 @@ public class VisualizerBean implements Serializable {
 
 	public void setSimulationStatus(String simulationStatus) {
 		this.simulationStatus = simulationStatus;
-	}
-
-	public WeatherReport getWeatherReport() {
-		return weatherReport;
-	}
-
-	public void setWeatherReport(WeatherReport weatherReport) {
-		this.weatherReport = weatherReport;
-	}
-
-	public WeatherForecast getWeatherForecast() {
-		return weatherForecast;
-	}
-
-	public void setWeatherForecast(WeatherForecast weatherForecast) {
-		this.weatherForecast = weatherForecast;
 	}
 
 	public int getCurrentTimeslotSerialNumber() {
@@ -243,6 +226,13 @@ public class VisualizerBean implements Serializable {
 
 	public void setFirstTimeslotIndex(int firstTimeslotIndex) {
 		this.firstTimeslotIndex = firstTimeslotIndex;
+	}
+	
+	public long getCurrentMillis() {
+		return currentMillis;
+	}
+	public void setCurrentMillis(long currentMillis) {
+		this.currentMillis = currentMillis;
 	}
 
 }
