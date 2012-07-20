@@ -19,6 +19,7 @@ logs/
 log/
 .settings/
 .springBeans
+boot.xml
 
 # OS generated files
 .DS_Store?
