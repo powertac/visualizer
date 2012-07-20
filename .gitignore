@@ -1,6 +1,7 @@
 # Don't commit changes to these files out unless you know what you are doing
 .classpath
 .project
+.settings
 
 # IntelliJ IDEA project files
 *.iml
@@ -17,7 +18,6 @@ target/
 activemq-data/
 logs/
 log/
-.settings/
 .springBeans
 boot.xml
 
