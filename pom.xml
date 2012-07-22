@@ -222,18 +222,50 @@
 	<artifactId>maven-jetty-plugin</artifactId>
 	<version>6.1.26</version>
 	<configuration>
-	  <contextPath>/visualizer</contextPath>
+	  <contextPath>/visualizer/${machineName}</contextPath>
           <systemProperties>
             <systemProperty>
-              <name>visualizerService.serverUrl</name>
-              <value>${visualizerService.serverUrl}</value>
+              <name>visualizerService.tournamentUrl</name>
+              <value>${tournamentUrl}</value>
             </systemProperty>
             <systemProperty>
-              <name>visualizerService.queueName</name>
-              <value>${visualizerService.queueName}</value>
+              <name>visualizerService.serverUrl</name>
+              <value>tcp://${machineName}:61616</value>
+            </systemProperty>
+            <systemProperty>
+              <name>visualizerService.machineName</name>
+              <value>${machineName}</value>
             </systemProperty>
           </systemProperties>
 	</configuration>
+      </plugin>
+      
+      <!--  tomcat plugin -->
+      <plugin>
+        <groupId>org.apache.tomcat.maven</groupId>
+        <artifactId>tomcat7-maven-plugin</artifactId>
+        <version>2.0-beta-1</version>
+        <configuration>
+          <url>http://localhost:8080/manager/text</url>
+          <username>admin</username>
+          <password>admin</password>
+          <path>/visualizer/${machineName}</path>
+          <update>true</update>
+          <systemProperties>
+            <systemProperty>
+              <name>visualizerService.tournamentUrl</name>
+              <value>${tournamentUrl}</value>
+            </systemProperty>
+            <systemProperty>
+              <name>visualizerService.serverUrl</name>
+              <value>tcp://${machineName}:61616</value>
+            </systemProperty>
+            <systemProperty>
+              <name>visualizerService.machineName</name>
+              <value>${machineName}</value>
+            </systemProperty>
+          </systemProperties>
+        </configuration>
       </plugin>
 
     </plugins>

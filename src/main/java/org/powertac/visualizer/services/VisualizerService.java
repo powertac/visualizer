@@ -16,7 +16,13 @@
 
 package org.powertac.visualizer.services;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -30,6 +36,10 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import javax.servlet.ServletContext;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.pool.PooledConnectionFactory;
@@ -50,6 +60,10 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessageCreator;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.ServletContextAware;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 /**
  * Main Visualizer service. Its main purpose is to register with Visualizer
@@ -82,19 +96,19 @@ public class VisualizerService
   private VisualizerBean visualizerBean;
 
   //private boolean alreadyRegistered = false;
+  private String tournamentUrl = "";
+  private String visualizerLoginContext = "";
+  private String machineName = "";
   private String serverUrl = "tcp://localhost:61616";
   private String queueName = "remote-visualizer";
 
-  // Server JMS Queue Name
-  private String serverQueueName = "serverInput";
-
   private LocalVisualizerProxy proxy;
-  //private boolean initialized = false;
+  private boolean initialized = false;
   private boolean running = false;
   
   // ping parameters
-  private long pingInitialDelay = 40000l;
-  private long pingPeriod = 20000l;
+  private long pingInitialDelay = 120000l;
+  private long pingPeriod = 60000l;
   private long lastMsgTime = 0l;
   private Timer pingTimer = null;
 
@@ -113,48 +127,93 @@ public class VisualizerService
   public void init ()
   {
     System.out.println("create and init proxy");
+
+    // log into tournament manager to get a queue name
+    tournamentLogin();
+
+    // once we have a queue name, create and init the proxy,
+    // and run a session
     proxy = new LocalVisualizerProxy();
     proxy.init(this);
-    
-    // set up liveness probe
-    lastMsgTime = new Date().getTime() + pingInitialDelay;
-    pingTimer = new Timer();
-    pingTimer.schedule(new TimerTask() {
-      @Override
-      public void run ()
-      {
-        long now = new Date().getTime();
-        long silence = now - lastMsgTime;
-        if (silence > pingPeriod) {
-          // send a probe
+  }
+
+  // Logs into the tournament manager to get the queue name for the
+  // upcoming session
+  private void tournamentLogin ()
+  {
+    String urlString = tournamentUrl + visualizerLoginContext +
+            "?" + machineName;
+    System.out.println("url=" + urlString);
+    URL url;
+    boolean loggedIn = false;
+    while (!loggedIn) {
+      try {
+        url = new URL(urlString);
+        URLConnection conn = url.openConnection();
+        InputStream input = conn.getInputStream();
+        System.out.println("Parsing message..");
+        DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory
+                .newInstance();
+        DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(input);
+
+        doc.getDocumentElement().normalize();
+
+        // Two different message types
+        Node retryNode = doc.getElementsByTagName("retry").item(0);
+        Node loginNode = doc.getElementsByTagName("login").item(0);
+
+        if (retryNode != null) {
+          String checkRetry = retryNode.getFirstChild()
+                  .getNodeValue();
+          log.info("Retry message received for : " + checkRetry
+                   + " seconds");
+          System.out.println("Retry message received for : "
+                  + checkRetry + " seconds");
+          // Received retry message spin and try again
           try {
-            proxy.sendMessage(new VisualizerStatusRequest());
-            System.out.println("ping sent");
+            Thread.sleep(Integer.parseInt(checkRetry) * 1000);
           }
-          catch (Exception ex) {
-            System.out.println("caught " + ex.toString());
-            pingTimer.cancel();
-            init();
-            return;
+          catch (InterruptedException e) {
+            e.printStackTrace();
           }
+          continue;
         }
-        if (silence > pingInitialDelay) {
-          // assume server is dead
-          System.out.println("Server does not respond to ping");
-          pingTimer.cancel();
-          init();
-          return;
+        else if (loginNode != null) {
+          System.out.println("Login response received!");
+          log.info("Login response received! ");
+
+          String checkQueue = doc.getElementsByTagName("queueName").item(0).getFirstChild().getNodeValue();
+          queueName = checkQueue;
+          log.info("queueName=" + checkQueue);
+
+          System.out.printf("Login message receieved!  queueName=%s\n", queueName);
+          loggedIn = true;
+        }
+        else {
+          // this is not working
+          System.out.println("Invalid response from TS");
+          break;
         }
       }
-    }, pingInitialDelay, pingPeriod);
+      catch (Exception e) {
+        e.printStackTrace();
+      }
+      try {
+        Thread.sleep(600000);
+      }
+      catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }    
   }
-  
+
   // once-per-game initialization
   public void initOnce ()
   {
     //if (initialized)
     //  return;
-    //initialized = true;
+    initialized = true;
     
     System.out.println("initOnce()");
     visualizerBean.newRun();
@@ -171,17 +230,43 @@ public class VisualizerService
     
     List<DomainRepo> repos =
   	      VisualizerApplicationContext.listBeansOfType(DomainRepo.class);
-  for (DomainRepo repo: repos) {
+    for (DomainRepo repo: repos) {
       log.debug("recycling..." + repos.getClass().getName());
       repo.recycle();
     }
+    startWatchdog();
+  }
+  
+  // start a watchdog timer to detect server failure
+  private void startWatchdog ()
+  {
+    lastMsgTime = new Date().getTime() + pingInitialDelay;
+    pingTimer = new Timer();
+    pingTimer.schedule(new TimerTask() {
+      @Override
+      public void run ()
+      {
+        long now = new Date().getTime();
+        long silence = now - lastMsgTime;
+        if (silence > pingPeriod) {
+          // Lost contact...
+          // assume server is dead
+          System.out.println("Message traffic appears to have stopped");
+          pingTimer.cancel();
+          shutDown();
+          return;
+        }
+      }
+    }, pingInitialDelay, pingPeriod);
   }
   
   // shut down the queue at end-of-game, wait 30 seconds, go again.
   public void shutDown ()
   {
     System.out.println("shut down proxy");
+    pingTimer.cancel();
     proxy.shutDown();
+    initialized = false;
     Timer restartTimer = new Timer();
     restartTimer.schedule(new TimerTask () {
       @Override
@@ -194,8 +279,16 @@ public class VisualizerService
   public void receiveMessage (Object msg)
   {
     // once-per-game initialization...
-    if (msg instanceof Competition)
+    if (msg instanceof Competition) {
+      // Competition must be first message. If we see something else first,
+      // it's an error.
       initOnce();
+    }
+    else if (!initialized) {
+      System.out.println("ERROR: msg of type " + msg.getClass().getName() +
+                         ", but not initialized. Ignoring.");
+      return;
+    }
     
     visualizerBean.incrementMessageCounter();
 
@@ -276,13 +369,47 @@ public class VisualizerService
   {
     serverUrl = newUrl;
   }
+  
+  public String getTournamentUrl ()
+  {
+    return tournamentUrl;
+  }
+  
+  public void setTournamentUrl (String newUrl)
+  {
+    tournamentUrl = newUrl;
+  }
+  
+  public String getVisualizerLoginContext ()
+  {
+    return visualizerLoginContext;
+  }
+  
+  public void setVisualizerLoginContext (String newContext)
+  {
+    visualizerLoginContext = newContext;
+  }
 
+  public String getMachineName ()
+  {
+    return machineName;
+  }
+
+  public void setMachineName (String name)
+  {
+    machineName = name;
+  }
+
+  // ------------ Local proxy implementation -------------
+  
   class LocalVisualizerProxy //implements VisualizerProxy
   {
     //TreeSet<VisualizerMessageListener> listeners =
     //  new TreeSet<VisualizerMessageListener>();
     
     VisualizerService host;
+    boolean connectionOpen = false;
+    DefaultMessageListenerContainer container;
 
     LocalVisualizerProxy ()
     {
@@ -292,7 +419,7 @@ public class VisualizerService
     // set up the jms queue
     void init (VisualizerService host)
     {
-      System.out.println("Server URL: " + getServerUrl() + ", queue: " + getQueueName());
+      System.out.println("Server URL: " + getServerUrl());
       this.host = host;
       
       if (connectionFactory instanceof PooledConnectionFactory) {
@@ -304,28 +431,8 @@ public class VisualizerService
         }
       }
 
-      // create the queue first
-      boolean success = false;
-      while (!success) {
-        try {
-          createQueue(getQueueName());
-          success = true;
-        }
-        catch (JMSException e) {
-          log.info("JMS message broker not ready - delay and retry");
-          //System.out.println("JMS message broker not ready - delay and retry");
-          try {
-            Thread.sleep(10000);
-          }
-          catch (InterruptedException e1) {
-            // ignore exception
-          }
-        }
-      }
-      System.out.println("Queue " + getQueueName() + " created");
-
       // register host as listener
-      DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
+      container = new DefaultMessageListenerContainer();
       container.setConnectionFactory(connectionFactory);
       container.setDestinationName(getQueueName());
       container.setMessageListener(host);
@@ -334,32 +441,46 @@ public class VisualizerService
       container.start();
     }
 
-    public void createQueue (String queueName) throws JMSException
+//    public void sendMessage (Object msg)
+//    {
+//      final String text = converter.toXML(msg);
+//      template.send(serverQueueName,
+//                    new MessageCreator() {
+//        @Override
+//        public Message createMessage (Session session) throws JMSException {
+//          TextMessage message = session.createTextMessage(text);
+//          return message;
+//        }
+//      });
+//    }
+
+    public synchronized void shutDown ()
     {
-      // now we can create the queue
-      Connection connection = connectionFactory.createConnection();
-      Session session = connection.createSession(false,
-                                                 Session.AUTO_ACKNOWLEDGE);
-      session.createQueue(queueName);
-      log.info("JMS Queue " + queueName + " created");
+      Runnable callback = new Runnable() {
+        @Override
+        public void run ()
+        {
+          closeConnection();
+        }
+      };
+      container.stop(callback);
+      
+      while (connectionOpen) {
+        try {
+          wait();
+        }
+        catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
     }
 
-    public void sendMessage (Object msg)
+    private synchronized void closeConnection ()
     {
-      final String text = converter.toXML(msg);
-      template.send(serverQueueName,
-                    new MessageCreator() {
-        @Override
-        public Message createMessage (Session session) throws JMSException {
-          TextMessage message = session.createTextMessage(text);
-          return message;
-        }
-      });
-    }
-    
-    void shutDown ()
-    {
-      //container.shutdown();
+      //session.close();
+      //connection.close();
+      connectionOpen = false;
+      notifyAll();
     }
   }
 }

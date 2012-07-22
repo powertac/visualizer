@@ -8,9 +8,9 @@
 
   <context:annotation-config />
 	<!-- <context:component-scan base-package="org.powertac.visualizer" /> -->
-        <context:component-scan base-package="org.powertac" />	
+  <context:component-scan base-package="org.powertac" />	
 
-	<bean id="visualizerApplicationContext" class="org.powertac.visualizer.VisualizerApplicationContext"/>
+  <bean id="visualizerApplicationContext" class="org.powertac.visualizer.VisualizerApplicationContext"/>
 
 	<!-- <bean id="visualizerLogService" class="org.powertac.visualizer.services.VisualizerLogService">
 		<constructor-arg name="outputFolderResource" value="log" />  
@@ -54,8 +54,10 @@
         <bean
           id="visualizerService"
           class="org.powertac.visualizer.services.VisualizerService">
-          <property name="serverUrl" value="${visualizerService.serverUrl}"/>
-          <property name="queueName" value="${visualizerService.queueName}"/>
+          <property name="serverUrl" value="tcp://${machineName}:61616"/>
+          <property name="machineName" value="${machineName}"/>
+          <property name="tournamentUrl" value="${tournamentUrl}"/>
+	  <property name="visualizerLoginContext" value="/visualizerLogin.jsp"/>
         </bean>
 	<!-- <bean id="visualizerBean" class="org.powertac.visualizer.beans.VisualizerBean"/>
 	 -->
