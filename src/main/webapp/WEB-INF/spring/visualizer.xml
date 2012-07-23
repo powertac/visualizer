@@ -57,7 +57,7 @@
           <property name="serverUrl" value="tcp://${machineName}:61616"/>
           <property name="machineName" value="${machineName}"/>
           <property name="tournamentUrl" value="${tournamentUrl}"/>
-	  <property name="visualizerLoginContext" value="/visualizerLogin.jsp"/>
+	  <property name="visualizerLoginContext" value="/faces/visualizerLogin.jsp"/>
         </bean>
 	<!-- <bean id="visualizerBean" class="org.powertac.visualizer.beans.VisualizerBean"/>
 	 -->

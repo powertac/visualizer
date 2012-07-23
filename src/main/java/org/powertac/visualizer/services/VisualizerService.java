@@ -16,31 +16,23 @@
 
 package org.powertac.visualizer.services;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
 
 import javax.annotation.Resource;
-import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
-import javax.jms.Session;
 import javax.jms.TextMessage;
-import javax.servlet.ServletContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.pool.PooledConnectionFactory;
 import org.apache.log4j.Logger;
@@ -57,13 +49,10 @@ import org.powertac.visualizer.interfaces.Initializable;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
-import org.springframework.jms.core.MessageCreator;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.ServletContextAware;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
 /**
  * Main Visualizer service. Its main purpose is to register with Visualizer
@@ -142,7 +131,7 @@ public class VisualizerService
   private void tournamentLogin ()
   {
     String urlString = tournamentUrl + visualizerLoginContext +
-            "?" + machineName;
+            "?machineName=" + machineName;
     System.out.println("url=" + urlString);
     URL url;
     boolean loggedIn = false;
@@ -166,9 +155,9 @@ public class VisualizerService
         if (retryNode != null) {
           String checkRetry = retryNode.getFirstChild()
                   .getNodeValue();
-          log.info("Retry message received for : " + checkRetry
+          log.info("Retry message received for " + checkRetry
                    + " seconds");
-          System.out.println("Retry message received for : "
+          System.out.println("Retry message received for "
                   + checkRetry + " seconds");
           // Received retry message spin and try again
           try {
@@ -177,17 +166,15 @@ public class VisualizerService
           catch (InterruptedException e) {
             e.printStackTrace();
           }
-          continue;
         }
         else if (loginNode != null) {
-          System.out.println("Login response received!");
           log.info("Login response received! ");
 
           String checkQueue = doc.getElementsByTagName("queueName").item(0).getFirstChild().getNodeValue();
           queueName = checkQueue;
           log.info("queueName=" + checkQueue);
 
-          System.out.printf("Login message receieved!  queueName=%s\n", queueName);
+          System.out.printf("Login message receieved:  queueName=%s\n", queueName);
           loggedIn = true;
         }
         else {
@@ -439,6 +426,8 @@ public class VisualizerService
       container.setTaskExecutor(taskExecutor);
       container.afterPropertiesSet();
       container.start();
+      
+      connectionOpen = true;
     }
 
 //    public void sendMessage (Object msg)
