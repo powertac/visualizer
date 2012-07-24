@@ -30,6 +30,7 @@ import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
+import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -40,8 +41,6 @@ import org.powertac.common.Competition;
 import org.powertac.common.msg.VisualizerStatusRequest;
 import org.powertac.common.repo.DomainRepo;
 import org.powertac.common.XMLMessageConverter;
-//import org.powertac.common.interfaces.VisualizerMessageListener;
-//import org.powertac.common.interfaces.VisualizerProxy;
 import org.powertac.visualizer.MessageDispatcher;
 import org.powertac.visualizer.VisualizerApplicationContext;
 import org.powertac.visualizer.beans.VisualizerBean;
@@ -49,6 +48,7 @@ import org.powertac.visualizer.interfaces.Initializable;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.MessageCreator;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
@@ -84,22 +84,25 @@ public class VisualizerService
   @Autowired
   private VisualizerBean visualizerBean;
 
-  //private boolean alreadyRegistered = false;
   private String tournamentUrl = "";
   private String visualizerLoginContext = "";
   private String machineName = "";
   private String serverUrl = "tcp://localhost:61616";
+  private String serverQueue = "serverInput";
   private String queueName = "remote-visualizer";
 
+  // visualizer interaction
   private LocalVisualizerProxy proxy;
   private boolean initialized = false;
   private boolean running = false;
   
-  // ping parameters
-  private long pingInitialDelay = 120000l;
-  private long pingPeriod = 60000l;
+  // state parameters
+  private static enum State {init, loginWait, gameWait, gameReady, loggedIn};
+  private long statePeriod = 60000l;
+  private long maxMsgInterval = 120000l;
   private long lastMsgTime = 0l;
-  private Timer pingTimer = null;
+  private State state = State.init;
+  private Timer stateTimer = null;
 
   @Autowired
   private MessageDispatcher dispatcher;
@@ -115,27 +118,57 @@ public class VisualizerService
    */
   public void init ()
   {
-    System.out.println("create and init proxy");
-
-    // log into tournament manager to get a queue name
-    tournamentLogin();
-
-    // once we have a queue name, create and init the proxy,
-    // and run a session
-    proxy = new LocalVisualizerProxy();
-    proxy.init(this);
+    System.out.println("start state timer");
+    stateTimer = new Timer();
+    TimerTask stateTask = new TimerTask() {
+      @Override
+      public void run ()
+      {
+        checkState();  
+      }
+    };
+    stateTimer.schedule(stateTask, statePeriod, statePeriod);
+  }
+  
+  // Run the viz state machine
+  private void checkState ()
+  {
+    if (state == State.init) {
+      // try to log in to the TM
+      state = State.loginWait;
+      tournamentLogin();
+    }
+    else if (state == State.gameWait) {
+      // no TM, log in to game directly
+      gameLogin();
+    }
+    else if (state == State.gameReady) {
+      // log into game
+      gameLogin();
+    }
+    else if (state == State.loginWait) {
+      // nothing to do here
+    }
+    else if (state == State.loggedIn) {
+      // check for server inactivity
+      checkInactivity();
+    }
   }
 
   // Logs into the tournament manager to get the queue name for the
   // upcoming session
   private void tournamentLogin ()
   {
+    if (tournamentUrl.isEmpty()) {
+      // No TM, just connect to server
+      state = State.gameWait;
+      return;
+    }
     String urlString = tournamentUrl + visualizerLoginContext +
             "?machineName=" + machineName;
     System.out.println("url=" + urlString);
     URL url;
-    boolean loggedIn = false;
-    while (!loggedIn) {
+    while (state == State.loginWait) {
       try {
         url = new URL(urlString);
         URLConnection conn = url.openConnection();
@@ -155,11 +188,10 @@ public class VisualizerService
         if (retryNode != null) {
           String checkRetry = retryNode.getFirstChild()
                   .getNodeValue();
-          log.info("Retry message received for " + checkRetry
-                   + " seconds");
-          System.out.println("Retry message received for "
-                  + checkRetry + " seconds");
-          // Received retry message spin and try again
+          //log.info("Retry in " + checkRetry
+          //         + " seconds");
+          System.out.println("Retry in " + checkRetry + " seconds");
+          // Received retry message; spin and try again
           try {
             Thread.sleep(Integer.parseInt(checkRetry) * 1000);
           }
@@ -170,29 +202,53 @@ public class VisualizerService
         else if (loginNode != null) {
           log.info("Login response received! ");
 
-          String checkQueue = doc.getElementsByTagName("queueName").item(0).getFirstChild().getNodeValue();
+          String checkQueue = 
+                  doc.getElementsByTagName("queueName")
+                  .item(0).getFirstChild().getNodeValue();
           queueName = checkQueue;
+          String checkSvrQueue = 
+                  doc.getElementsByTagName("serverQueue")
+                  .item(0).getFirstChild().getNodeValue();
+          serverQueue = checkSvrQueue;
           log.info("queueName=" + checkQueue);
 
-          System.out.printf("Login message receieved:  queueName=%s\n", queueName);
-          loggedIn = true;
+          System.out.printf("Login message receieved:  queueName=%s, serverQueue=%s\n",
+                            queueName, serverQueue);
+          state = State.gameReady;
         }
         else {
           // this is not working
           System.out.println("Invalid response from TS");
-          break;
+          state = State.init;
         }
       }
       catch (Exception e) {
-        e.printStackTrace();
-      }
-      try {
-        Thread.sleep(600000);
-      }
-      catch (InterruptedException e) {
+        state = State.init;
         e.printStackTrace();
       }
     }    
+  }
+  
+  // Attempt to log into a game.
+  private void gameLogin ()
+  {
+    if (null == proxy) {
+      // no proxy yet for this game
+      proxy = new LocalVisualizerProxy();
+      proxy.init(this);
+    }
+    VisualizerStatusRequest rq = new VisualizerStatusRequest();
+    proxy.sendMessage(rq);
+  }
+
+  private void checkInactivity () {
+    long now = new Date().getTime();
+    long silence = now - lastMsgTime;
+    if (silence > maxMsgInterval) {
+      // declare inactivity
+      System.out.println("Inactivity declared");
+      shutDown();
+    }
   }
 
   // once-per-game initialization
@@ -221,46 +277,17 @@ public class VisualizerService
       log.debug("recycling..." + repos.getClass().getName());
       repo.recycle();
     }
-    startWatchdog();
-  }
-  
-  // start a watchdog timer to detect server failure
-  private void startWatchdog ()
-  {
-    lastMsgTime = new Date().getTime() + pingInitialDelay;
-    pingTimer = new Timer();
-    pingTimer.schedule(new TimerTask() {
-      @Override
-      public void run ()
-      {
-        long now = new Date().getTime();
-        long silence = now - lastMsgTime;
-        if (silence > pingPeriod) {
-          // Lost contact...
-          // assume server is dead
-          System.out.println("Message traffic appears to have stopped");
-          pingTimer.cancel();
-          shutDown();
-          return;
-        }
-      }
-    }, pingInitialDelay, pingPeriod);
+    //startWatchdog();
   }
   
   // shut down the queue at end-of-game, wait 30 seconds, go again.
   public void shutDown ()
   {
     System.out.println("shut down proxy");
-    pingTimer.cancel();
+
     proxy.shutDown();
-    initialized = false;
-    Timer restartTimer = new Timer();
-    restartTimer.schedule(new TimerTask () {
-      @Override
-      public void run () {
-        init();
-      }
-    }, 30000l);
+    state = State.init;
+    proxy = null; // force re-creation
   }
 
   public void receiveMessage (Object msg)
@@ -319,8 +346,14 @@ public class VisualizerService
     log.info("onMessage(String) - received message:\n" + xml);
     Object message = converter.fromXML(xml);
     log.debug("onMessage(String) - received message of type " + message.getClass().getSimpleName());
-    if (!(message instanceof VisualizerStatusRequest))
+    if (message instanceof VisualizerStatusRequest) {
+      if (state == State.gameReady || state == State.gameWait) {
+        state = State.loggedIn;
+      }
+    }
+    else {
       receiveMessage(message);
+    }
   }
 
   @Override
@@ -430,18 +463,18 @@ public class VisualizerService
       connectionOpen = true;
     }
 
-//    public void sendMessage (Object msg)
-//    {
-//      final String text = converter.toXML(msg);
-//      template.send(serverQueueName,
-//                    new MessageCreator() {
-//        @Override
-//        public Message createMessage (Session session) throws JMSException {
-//          TextMessage message = session.createTextMessage(text);
-//          return message;
-//        }
-//      });
-//    }
+    public void sendMessage (Object msg)
+    {
+      final String text = converter.toXML(msg);
+      template.send(serverQueue,
+                    new MessageCreator() {
+        @Override
+        public Message createMessage (Session session) throws JMSException {
+          TextMessage message = session.createTextMessage(text);
+          return message;
+        }
+      });
+    }
 
     public synchronized void shutDown ()
     {
