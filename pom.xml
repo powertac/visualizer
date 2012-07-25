@@ -4,12 +4,12 @@
   <artifactId>visualizer</artifactId>
   <name>PowerTAC Visualizer</name>
   <packaging>war</packaging>
-  <version>0.6.0-SNAPSHOT</version>
+  <version>0.6.1-SNAPSHOT</version>
 
   <parent>
     <groupId>org.powertac</groupId>
     <artifactId>server-master</artifactId>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>0.6.1-SNAPSHOT</version>
     <relativePath />
   </parent>
 
@@ -22,6 +22,12 @@
   </properties>
 
   <dependencies>
+    <!-- Power TAC -->
+    <dependency>
+      <groupId>org.powertac</groupId>
+      <artifactId>server-main</artifactId>
+      <version>0.6.1-SNAPSHOT</version>
+    </dependency>
 
     <!-- Spring -->
     <dependency>
@@ -226,7 +232,7 @@
 	<version>6.1.26</version>
 	<configuration>
           <systemProperties>
-            <!-- defaults -->
+            <!-- defaults ... don't seem to work... -->
             <systemProperty>
               <name>tournamentUrl</name>
               <value></value>
@@ -242,14 +248,14 @@
             </systemProperty>
             <systemProperty>
               <name>visualizerService.serverUrl</name>
-              <value>tcp://${machineName}:61616</value>
+              <value>tcp://${simHost}:61616</value>
             </systemProperty>
             <systemProperty>
               <name>visualizerService.machineName</name>
-              <value>${machineName}</value>
+              <value>${simName}</value>
             </systemProperty>
           </systemProperties>
-          <contextPath>/visualizer/${machineName}</contextPath>
+          <contextPath>/visualizer/${simName}</contextPath>
 	</configuration>
       </plugin>
       
@@ -262,7 +268,7 @@
           <url>http://localhost:8080/manager/text</url>
           <username>admin</username>
           <password>admin</password>
-          <path>/visualizer/${machineName}</path>
+          <path>/visualizer/${simName}</path>
           <update>true</update>
           <systemProperties>
             <systemProperty>
@@ -271,11 +277,11 @@
             </systemProperty>
             <systemProperty>
               <name>visualizerService.serverUrl</name>
-              <value>tcp://${machineName}:61616</value>
+              <value>tcp://${simHost}:61616</value>
             </systemProperty>
             <systemProperty>
               <name>visualizerService.machineName</name>
-              <value>${machineName}</value>
+              <value>${simName}</value>
             </systemProperty>
           </systemProperties>
         </configuration>
