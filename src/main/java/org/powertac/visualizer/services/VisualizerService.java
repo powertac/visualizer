@@ -23,7 +23,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.annotation.Resource;
 import javax.jms.ConnectionFactory;
@@ -38,6 +40,8 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.pool.PooledConnectionFactory;
 import org.apache.log4j.Logger;
 import org.powertac.common.Competition;
+import org.powertac.common.msg.BrokerAccept;
+import org.powertac.common.msg.BrokerAuthentication;
 import org.powertac.common.msg.VisualizerStatusRequest;
 import org.powertac.common.repo.DomainRepo;
 import org.powertac.common.XMLMessageConverter;
@@ -45,6 +49,7 @@ import org.powertac.visualizer.MessageDispatcher;
 import org.powertac.visualizer.VisualizerApplicationContext;
 import org.powertac.visualizer.beans.VisualizerBean;
 import org.powertac.visualizer.interfaces.Initializable;
+import org.powertac.visualizer.services.VisualizerState.Event;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
@@ -58,7 +63,7 @@ import org.w3c.dom.Node;
  * Main Visualizer service. Its main purpose is to register with Visualizer
  * proxy and to receive messages from simulator.
  * 
- * @author Jurica Babic
+ * @author Jurica Babic, John Collins
  * 
  */
 
@@ -97,12 +102,19 @@ public class VisualizerService
   private boolean running = false;
   
   // state parameters
-  private static enum State {init, loginWait, gameWait, gameReady, loggedIn};
+  //private static enum State {init, loginWait, gameWait, gameReady, loggedIn};
   private long statePeriod = 60000l;
   private long maxMsgInterval = 120000l;
   private long lastMsgTime = 0l;
-  private State state = State.init;
-  private Timer stateTimer = null;
+  private Timer tickTimer = null;
+  
+  // States
+  private VisualizerState initial, loginWait, gameWait, gameReady, loggedIn;
+  private VisualizerState currentState;
+  
+  // event queue
+  private BlockingQueue<Event> eventQueue =
+          new LinkedBlockingQueue<Event>();
 
   @Autowired
   private MessageDispatcher dispatcher;
@@ -118,40 +130,150 @@ public class VisualizerService
    */
   public void init ()
   {
-    System.out.println("start state timer");
-    stateTimer = new Timer();
+    //System.out.println("viz: start state timer");
+    tickTimer = new Timer();
     TimerTask stateTask = new TimerTask() {
       @Override
       public void run ()
       {
-        checkState();  
+        System.out.println("viz: message count = " +
+                           visualizerBean.getMessageCount());
+        addEvent(Event.tick);
       }
     };
-    stateTimer.schedule(stateTask, statePeriod, statePeriod);
+    tickTimer.schedule(stateTask, 10, statePeriod);
+    runStates();
   }
   
-  // Run the viz state machine
-  private void checkState ()
+  // convience functions for handling the queue
+  private void addEvent (Event event)
   {
-    if (state == State.init) {
-      // try to log in to the TM
-      state = State.loginWait;
-      tournamentLogin();
+    try {
+      eventQueue.put(event);
     }
-    else if (state == State.gameWait) {
-      // no TM, log in to game directly
-      gameLogin();
+    catch (InterruptedException e) {
+      e.printStackTrace();
     }
-    else if (state == State.gameReady) {
-      // log into game
-      gameLogin();
+  }
+  
+  private Event getEvent ()
+  {
+    try {
+      return eventQueue.take();
     }
-    else if (state == State.loginWait) {
-      // nothing to do here
+    catch (InterruptedException e) {
+      e.printStackTrace();
+      return Event.tick; // default event, harmless enough
     }
-    else if (state == State.loggedIn) {
-      // check for server inactivity
-      checkInactivity();
+  }
+  
+  private void setCurrentState (VisualizerState newState)
+  {
+    currentState = newState;
+    newState.entry();
+  }
+  
+  // Run the viz state machine -- called from timer thread.
+  private void runStates ()
+  {
+    initial = new VisualizerState () {
+      @Override
+      public void entry ()
+      {
+        System.out.println("viz state initial");
+        if (null != proxy) {
+          shutDown();
+        }
+        setCurrentState(loginWait);
+      }
+      @Override
+      public void handleEvent (Event event)
+      {
+        if (event == Event.tick) {
+          // safety valve
+          setCurrentState(loginWait);          
+        }
+      }
+    };
+    
+    loginWait = new VisualizerState () {
+      @Override
+      public void entry ()
+      {
+        System.out.println("viz state loginWait");
+        tournamentLogin();
+      }
+      @Override
+      public void handleEvent (Event event)
+      {
+        if (event == Event.noTm) {
+          setCurrentState(gameWait);
+        }
+        else if (event == Event.accept){
+          setCurrentState(gameReady);
+        }
+      }
+    };
+    
+    gameWait = new VisualizerState () {
+      @Override
+      public void entry ()
+      {
+        System.out.println("viz state gameWait");
+        gameLogin();
+      }
+      @Override
+      public void handleEvent (Event event)
+      {
+        if (event == Event.vsr) {
+          setCurrentState(loggedIn);
+        }
+        else if (event == Event.tick) {
+          pingServer(); // try again
+        }
+      }
+    };
+    
+    gameReady = new VisualizerState () {
+      @Override
+      public void entry ()
+      {
+        System.out.println("viz state gameReady");
+        gameLogin();
+      }
+      @Override
+      public void handleEvent (Event event)
+      {
+        if (event == Event.vsr) {
+          setCurrentState(loggedIn);
+        }
+        else if (event == Event.tick) {
+          pingServer(); // try again
+        }
+      }
+    };
+
+    loggedIn = new VisualizerState () {
+      @Override
+      public void entry ()
+      {
+        System.out.println("viz state loggedIn");
+      }
+      @Override
+      public void handleEvent (Event event)
+      {
+        if (event == Event.simEnd) {
+          setCurrentState(initial);
+        }
+        else if (event == Event.tick && isInactive()) {
+          setCurrentState(initial);
+        }
+      }
+    };
+    
+    setCurrentState(initial);
+    while (true) {
+      currentState.handleEvent(getEvent());
     }
   }
 
@@ -159,16 +281,18 @@ public class VisualizerService
   // upcoming session
   private void tournamentLogin ()
   {
+    //System.out.println("Tournament URL='" + tournamentUrl + "'");
     if (tournamentUrl.isEmpty()) {
       // No TM, just connect to server
-      state = State.gameWait;
+      addEvent(Event.noTm);
       return;
     }
     String urlString = tournamentUrl + visualizerLoginContext +
             "?machineName=" + machineName;
-    System.out.println("url=" + urlString);
+    System.out.println("viz: tourney url=" + urlString);
     URL url;
-    while (state == State.loginWait) {
+    boolean tryAgain = true;
+    while (tryAgain) {
       try {
         url = new URL(urlString);
         URLConnection conn = url.openConnection();
@@ -190,7 +314,7 @@ public class VisualizerService
                   .getNodeValue();
           //log.info("Retry in " + checkRetry
           //         + " seconds");
-          System.out.println("Retry in " + checkRetry + " seconds");
+          System.out.println("viz: Retry in " + checkRetry + " seconds");
           // Received retry message; spin and try again
           try {
             Thread.sleep(Integer.parseInt(checkRetry) * 1000);
@@ -212,18 +336,18 @@ public class VisualizerService
           serverQueue = checkSvrQueue;
           log.info("queueName=" + checkQueue);
 
-          System.out.printf("Login message receieved:  queueName=%s, serverQueue=%s\n",
+          System.out.printf("viz: Login message receieved:  queueName=%s, serverQueue=%s\n",
                             queueName, serverQueue);
-          state = State.gameReady;
+          addEvent(Event.accept);
+          tryAgain = false;
         }
         else {
           // this is not working
           System.out.println("Invalid response from TS");
-          state = State.init;
         }
       }
       catch (Exception e) {
-        state = State.init;
+        // should we have an event here?
         e.printStackTrace();
       }
     }    
@@ -237,18 +361,23 @@ public class VisualizerService
       proxy = new LocalVisualizerProxy();
       proxy.init(this);
     }
-    VisualizerStatusRequest rq = new VisualizerStatusRequest();
-    proxy.sendMessage(rq);
+    pingServer();
+  }
+  
+  private void pingServer ()
+  {
+    proxy.sendMessage(new VisualizerStatusRequest());
   }
 
-  private void checkInactivity () {
+  private boolean isInactive () {
     long now = new Date().getTime();
     long silence = now - lastMsgTime;
     if (silence > maxMsgInterval) {
       // declare inactivity
-      System.out.println("Inactivity declared");
-      shutDown();
+      System.out.println("viz: Inactivity declared");
+      return true;
     }
+    return false;
   }
 
   // once-per-game initialization
@@ -258,7 +387,7 @@ public class VisualizerService
     //  return;
     initialized = true;
     
-    System.out.println("initOnce()");
+    System.out.println("viz: initOnce()");
     visualizerBean.newRun();
 
     // visualizerLogService.startLog(visualizerBean.getVisualizerRunCount());
@@ -277,17 +406,21 @@ public class VisualizerService
       log.debug("recycling..." + repos.getClass().getName());
       repo.recycle();
     }
-    //startWatchdog();
   }
   
-  // shut down the queue at end-of-game, wait 30 seconds, go again.
+  // shut down the queue at end-of-game, wait a few seconds, go again.
   public void shutDown ()
   {
-    System.out.println("shut down proxy");
+    System.out.println("viz: shut down proxy");
 
     proxy.shutDown();
-    state = State.init;
     proxy = null; // force re-creation
+    try {
+      Thread.sleep(5000); // wait for sim process to quit
+    }
+    catch (InterruptedException e) {
+      e.printStackTrace();
+    }
   }
 
   public void receiveMessage (Object msg)
@@ -307,14 +440,14 @@ public class VisualizerService
     visualizerBean.incrementMessageCounter();
 
     if (msg != null) {
-      log.debug("Counter: " + visualizerBean.getMessageCount()
-                + ", Got message: " + msg.getClass().getName());
-      System.out.println("Counter: " + visualizerBean.getMessageCount()
-                + ", Got message: " + msg.getClass().getName());
+      //log.debug("Counter: " + visualizerBean.getMessageCount()
+      //          + ", Got message: " + msg.getClass().getName());
+      //System.out.println("Counter: " + visualizerBean.getMessageCount()
+      //          + ", Got message: " + msg.getClass().getName());
       dispatcher.routeMessage(msg);
     }
     else {
-      log.warn("Counter:" + visualizerBean.getMessageCount()
+      System.out.println("Counter:" + visualizerBean.getMessageCount()
                + " Received message is NULL!");
     }
     // end-of-game check
@@ -322,8 +455,8 @@ public class VisualizerService
       running = true;
     }
     if (running && visualizerBean.isFinished()) {
-      System.out.println("Game finished");
-      shutDown();
+      System.out.println("viz: Game finished");
+      addEvent(Event.simEnd);
     }      
   }
 
@@ -332,24 +465,28 @@ public class VisualizerService
   public void onMessage (Message message)
   {
     lastMsgTime = new Date().getTime();
+    //System.out.println("onMessage");
     if (message instanceof TextMessage) {
       try {
-        log.debug("onMessage(Message) - receiving a message");
+        //System.out.println("onMessage: text");
         onMessage(((TextMessage) message).getText());
       } catch (JMSException e) {
-        log.error("failed to extract text from TextMessage", e);
+        System.out.println("ERROR: viz failed to extract text from TextMessage: " + e.toString());
       }
     }
   }
 
+  // runs in JMS thread
   private void onMessage (String xml) {
     log.info("onMessage(String) - received message:\n" + xml);
     Object message = converter.fromXML(xml);
     log.debug("onMessage(String) - received message of type " + message.getClass().getSimpleName());
     if (message instanceof VisualizerStatusRequest) {
-      if (state == State.gameReady || state == State.gameWait) {
-        state = State.loggedIn;
-      }
+      addEvent(Event.vsr);
+    }
+    else if (message instanceof BrokerAccept ||
+             message instanceof BrokerAuthentication) {
+      // hack to ignore these
     }
     else {
       receiveMessage(message);
@@ -439,7 +576,7 @@ public class VisualizerService
     // set up the jms queue
     void init (VisualizerService host)
     {
-      System.out.println("Server URL: " + getServerUrl());
+      System.out.println("viz: Server URL: " + getServerUrl() + ", queue: " + getQueueName());
       this.host = host;
       
       if (connectionFactory instanceof PooledConnectionFactory) {
@@ -465,6 +602,7 @@ public class VisualizerService
 
     public void sendMessage (Object msg)
     {
+      try {
       final String text = converter.toXML(msg);
       template.send(serverQueue,
                     new MessageCreator() {
@@ -474,6 +612,11 @@ public class VisualizerService
           return message;
         }
       });
+      }
+      catch (Exception e) {
+        System.out.println("Exception " + e.toString() +
+                           " sending message - ignoring");
+      }
     }
 
     public synchronized void shutDown ()

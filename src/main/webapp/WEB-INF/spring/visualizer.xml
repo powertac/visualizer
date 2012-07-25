@@ -120,9 +120,21 @@
 	</bean>
 	
 	<!-- ......USER SESSION BEANS:..................... -->
+        <bean id="wholesaleService"
+              class="org.powertac.visualizer.services.WholesaleService"/>
+        <bean id="gencoService"
+              class="org.powertac.visualizer.services.GencoService"/>
   	<bean id="selectedBrokerChartsBean" class="org.powertac.visualizer.user.SelectedBrokerChartsBean" scope="session"/>
-	<bean id="wholesaleBean" class="org.powertac.visualizer.user.WholesaleBean" scope="session"/>
-	<bean id="gencosBean" class="org.powertac.visualizer.user.GencosBean" scope="request" />
+	<bean id="wholesaleBean"
+              class="org.powertac.visualizer.user.WholesaleBean"
+              scope="session">
+          <constructor-arg ref="wholesaleService"/>
+        </bean>
+	<bean id="gencosBean"
+              class="org.powertac.visualizer.user.GencosBean"
+              scope="request">
+          <constructor-arg ref="gencoService"/>
+        </bean>
 	<bean id="brokersBean" class="org.powertac.visualizer.user.BrokersBean" scope="session"/>
 	<bean id="customersBean" class="org.powertac.visualizer.user.CustomersBean"
               autowire="byType" scope="request"/>

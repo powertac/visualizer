@@ -16,6 +16,9 @@
   <properties>
     <springwebflow-version>2.3.0.RELEASE</springwebflow-version>
     <springsecurity-version>3.0.3.RELEASE</springsecurity-version>
+    <!--  default values for command-line properties
+    <machineName>localhost</machineName>
+    <tournamentUrl></tournamentUrl>  -->
   </properties>
 
   <dependencies>
@@ -222,8 +225,17 @@
 	<artifactId>maven-jetty-plugin</artifactId>
 	<version>6.1.26</version>
 	<configuration>
-	  <contextPath>/visualizer/${machineName}</contextPath>
           <systemProperties>
+            <!-- defaults -->
+            <systemProperty>
+              <name>tournamentUrl</name>
+              <value></value>
+            </systemProperty>
+            <systemProperty>
+              <name>machineName</name>
+              <value>localhost</value>
+            </systemProperty>
+            <!-- settings passed to Spring config visualizer.xml -->
             <systemProperty>
               <name>visualizerService.tournamentUrl</name>
               <value>${tournamentUrl}</value>
@@ -237,6 +249,7 @@
               <value>${machineName}</value>
             </systemProperty>
           </systemProperties>
+          <contextPath>/visualizer/${machineName}</contextPath>
 	</configuration>
       </plugin>
       
