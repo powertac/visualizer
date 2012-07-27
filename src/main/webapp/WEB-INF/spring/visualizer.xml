@@ -54,9 +54,9 @@
         <bean
           id="visualizerService"
           class="org.powertac.visualizer.services.VisualizerService">
-          <property name="serverUrl" value="tcp://${machineName}:61616"/>
-          <property name="machineName" value="${machineName}"/>
-          <property name="tournamentUrl" value="${tournamentUrl}"/>
+          <property name="serverUrl" value="${visualizerService.serverUrl}"/>
+          <property name="machineName" value="${visualizerService.nodeName}"/>
+          <property name="tournamentUrl" value="${visualizerService.tournamentUrl}"/>
 	  <property name="visualizerLoginContext" value="/faces/visualizerLogin.jsp"/>
         </bean>
 	<!-- <bean id="visualizerBean" class="org.powertac.visualizer.beans.VisualizerBean"/>
@@ -120,6 +120,8 @@
 	</bean>
 	
 	<!-- ......USER SESSION BEANS:..................... -->
+        <bean id="customerService"
+              class="org.powertac.visualizer.services.CustomerService"/>
         <bean id="wholesaleService"
               class="org.powertac.visualizer.services.WholesaleService"/>
         <bean id="gencoService"
@@ -137,7 +139,10 @@
         </bean>
 	<bean id="brokersBean" class="org.powertac.visualizer.user.BrokersBean" scope="session"/>
 	<bean id="customersBean" class="org.powertac.visualizer.user.CustomersBean"
-              autowire="byType" scope="request"/>
+              autowire="byType" scope="request">
+          <constructor-arg ref="customerService"/>
+          <constructor-arg ref="userSessionBean"/>
+        </bean>
 	<bean id="userSessionBean" class="org.powertac.visualizer.user.UserSessionBean" scope="session"/>
 	
 		

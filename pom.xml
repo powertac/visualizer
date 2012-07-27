@@ -17,7 +17,7 @@
     <springwebflow-version>2.3.0.RELEASE</springwebflow-version>
     <springsecurity-version>3.0.3.RELEASE</springsecurity-version>
     <!--  default values for command-line properties
-    <machineName>localhost</machineName>
+    <nodeName>localhost</nodeName>
     <tournamentUrl></tournamentUrl>  -->
   </properties>
 
@@ -238,7 +238,7 @@
               <value></value>
             </systemProperty>
             <systemProperty>
-              <name>machineName</name>
+              <name>nodeName</name>
               <value>localhost</value>
             </systemProperty>
             <!-- settings passed to Spring config visualizer.xml -->
@@ -251,7 +251,7 @@
               <value>tcp://${simHost}:61616</value>
             </systemProperty>
             <systemProperty>
-              <name>visualizerService.machineName</name>
+              <name>visualizerService.nodeName</name>
               <value>${simName}</value>
             </systemProperty>
           </systemProperties>
@@ -280,7 +280,7 @@
               <value>tcp://${simHost}:61616</value>
             </systemProperty>
             <systemProperty>
-              <name>visualizerService.machineName</name>
+              <name>visualizerService.nodeName</name>
               <value>${simName}</value>
             </systemProperty>
           </systemProperties>

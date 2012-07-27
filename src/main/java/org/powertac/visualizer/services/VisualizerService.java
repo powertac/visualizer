@@ -103,7 +103,7 @@ public class VisualizerService
   
   // state parameters
   //private static enum State {init, loginWait, gameWait, gameReady, loggedIn};
-  private long statePeriod = 60000l;
+  private long tickPeriod = 30000l;
   private long maxMsgInterval = 120000l;
   private long lastMsgTime = 0l;
   private Timer tickTimer = null;
@@ -113,8 +113,7 @@ public class VisualizerService
   private VisualizerState currentState;
   
   // event queue
-  private BlockingQueue<Event> eventQueue =
-          new LinkedBlockingQueue<Event>();
+  private BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<Event>();
 
   @Autowired
   private MessageDispatcher dispatcher;
@@ -125,12 +124,15 @@ public class VisualizerService
   }
 
   /**
-   * Should be called before simulator run in order to prepare/reset
-   * Visualizer beans and register with the new simulator instance.
+   * Called on initialization to start message feeder and state machine.
    */
   public void init ()
   {
-    //System.out.println("viz: start state timer");
+    // Start the message feeder
+    Thread messageFeeder = new Thread(messagePump);
+    messageFeeder.start();
+
+    // Start the state machine
     tickTimer = new Timer();
     TimerTask stateTask = new TimerTask() {
       @Override
@@ -138,15 +140,15 @@ public class VisualizerService
       {
         System.out.println("viz: message count = " +
                            visualizerBean.getMessageCount());
-        addEvent(Event.tick);
+        putEvent(Event.tick);
       }
     };
-    tickTimer.schedule(stateTask, 10, statePeriod);
+    tickTimer.schedule(stateTask, 10, tickPeriod);
     runStates();
   }
   
-  // convience functions for handling the queue
-  private void addEvent (Event event)
+  // convience functions for handling the event queue
+  private void putEvent (Event event)
   {
     try {
       eventQueue.put(event);
@@ -284,7 +286,7 @@ public class VisualizerService
     //System.out.println("Tournament URL='" + tournamentUrl + "'");
     if (tournamentUrl.isEmpty()) {
       // No TM, just connect to server
-      addEvent(Event.noTm);
+      putEvent(Event.noTm);
       return;
     }
     String urlString = tournamentUrl + visualizerLoginContext +
@@ -338,7 +340,7 @@ public class VisualizerService
 
           System.out.printf("viz: Login message receieved:  queueName=%s, serverQueue=%s\n",
                             queueName, serverQueue);
-          addEvent(Event.accept);
+          putEvent(Event.accept);
           tryAgain = false;
         }
         else {
@@ -366,6 +368,7 @@ public class VisualizerService
   
   private void pingServer ()
   {
+    System.out.println("Ping sim server");
     proxy.sendMessage(new VisualizerStatusRequest());
   }
 
@@ -423,6 +426,45 @@ public class VisualizerService
     }
   }
 
+  // ---------------- Message handling ------------------
+  // Pumps messages from incoming JMS messages into the visualizer in
+  // a single thread. The queue avoids potential race conditions on 
+  // input.
+  private Runnable messagePump = new Runnable() {
+    @Override
+    public void run ()
+    {
+      while (true) {
+        Object msg = getMessage();
+        receiveMessage(msg);
+      }
+    }
+  };
+
+  private BlockingQueue<Object> messageQueue = new LinkedBlockingQueue<Object>();
+
+  // convience functions for handling the event queue
+  private void putMessage (Object message)
+  {
+    try {
+      messageQueue.put(message);
+    }
+    catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+  }
+  
+  private Object getMessage ()
+  {
+    try {
+      return messageQueue.take();
+    }
+    catch (InterruptedException e) {
+      e.printStackTrace();
+      return null;
+    }
+  }
+
   public void receiveMessage (Object msg)
   {
     // once-per-game initialization...
@@ -456,7 +498,7 @@ public class VisualizerService
     }
     if (running && visualizerBean.isFinished()) {
       System.out.println("viz: Game finished");
-      addEvent(Event.simEnd);
+      putEvent(Event.simEnd);
     }      
   }
 
@@ -482,14 +524,15 @@ public class VisualizerService
     Object message = converter.fromXML(xml);
     log.debug("onMessage(String) - received message of type " + message.getClass().getSimpleName());
     if (message instanceof VisualizerStatusRequest) {
-      addEvent(Event.vsr);
+      System.out.println("Received vsr");
+      putEvent(Event.vsr);
     }
     else if (message instanceof BrokerAccept ||
              message instanceof BrokerAuthentication) {
       // hack to ignore these
     }
     else {
-      receiveMessage(message);
+      putMessage(message);
     }
   }
 
