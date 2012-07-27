@@ -7,87 +7,189 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
+import org.powertac.common.Competition;
+import org.powertac.common.CustomerInfo;
+import org.powertac.common.TariffSpecification;
+import org.powertac.common.msg.TimeslotUpdate;
+import org.powertac.common.repo.BrokerRepo;
+import org.powertac.common.repo.CustomerRepo;
+import org.powertac.common.repo.TariffRepo;
+import org.powertac.common.repo.TimeslotRepo;
+import org.powertac.visualizer.interfaces.Initializable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Modified version of a org.powertac.samplebroker.core.MessageDispatcher class. It is
+ * Modified version of a org.powertac.samplebroker.core.MessageDispatcher class.
+ * It is
  * used for registering handlers for specific message types and message routing.
  * 
- * @author Jurica Babic
+ * @author Jurica Babic, John Collins
  * 
  */
 @Service
-public class MessageDispatcher {
+public class MessageDispatcher
+implements Initializable
+{
+  static private Logger log = Logger.getLogger(MessageDispatcher.class);
 
-	static private Logger log = Logger.getLogger(MessageDispatcher.class);
+  @Autowired
+  private CustomerRepo customerRepo;
+  
+  @Autowired
+  private BrokerRepo brokerRepo;
 
-	private HashMap<Class<?>, Set<Object>> registrations;
-	
-	 public MessageDispatcher ()
-	  {
-	    super();
-	    registrations = new HashMap<Class<?>, Set<Object>>();
-	  }
+  @Autowired
+  private TariffRepo tariffRepo;
+  
+  @Autowired
+  private TimeslotRepo timeslotRepo;
 
-	// ------------- incoming messages ----------------
-	/**
-	 * Sets up handlers for incoming messages by message type.
-	 */
-	public void registerMessageHandler(Object handler, Class<?> messageType) {
-		Set<Object> reg = registrations.get(messageType);
-		if (reg == null) {
-			reg = new HashSet<Object>();
-			registrations.put(messageType, reg);
-		}
-		reg.add(handler);
-	}
+  // handler registrations
+  private HashMap<Class<?>, Set<Object>> registrations;
+  
+  // persistence registrations
+  private HashMap<Class<?>, Method> persisters;
 
-	/**
-	 * Routes incoming messages from the server
-	 */
-	public void routeMessage(Object message) {
-		Class<?> clazz = message.getClass();
-		log.debug("Route " + clazz.getName());
-		Set<Object> targets = registrations.get(clazz);
-		if (targets == null) {
-			log.warn("no targets for message of type " + clazz.getName());
-			return;
-		}
-		for (Object target : targets) {
-			log.trace("dipatching to:"+target.getClass().getName());
-			dispatch(target, "handleMessage", message);
-		}
-	}
+  public MessageDispatcher ()
+  {
+    super();
+  }
 
-	static public Object dispatch(Object target, String methodName, Object... args) {
-		Logger log = Logger.getLogger(target.getClass().getName());
-		Object result = null;
-		try {
-			Class[] classes = new Class[args.length];
-			for (int index = 0; index < args.length; index++) {
-				// log.debug("arg class: " + args[index].getClass().getName());
-				classes[index] = (args[index].getClass());
-			}
-			// see if we can find the method directly
-			Method method = target.getClass().getMethod(methodName, classes);
-			log.debug("found method " + method);
-			result = method.invoke(target, args);
-		} catch (NoSuchMethodException nsm) {
-			log.debug("Could not find exact match: " + nsm.toString());
-		} catch (InvocationTargetException ite) {
-			Throwable thr = ite.getTargetException();
+  // ------------- incoming messages ----------------
+  /**
+   * Sets up handlers for incoming messages by message type.
+   */
+  public void registerMessageHandler (Object handler, Class<?> messageType)
+  {
+    Set<Object> reg = registrations.get(messageType);
+    if (reg == null) {
+      reg = new HashSet<Object>();
+      registrations.put(messageType, reg);
+    }
+    reg.add(handler);
+  }
 
-			if (thr.getStackTrace().length > 3) {
-				log.error("Cannot call " + methodName + ": " + thr + "\n  ..at " + thr.getStackTrace()[0] + "\n  ..at "
-						+ thr.getStackTrace()[1] + "\n  ..at " + thr.getStackTrace()[2] + "\n  ..at "
-						+ thr.getStackTrace()[3] + "\n  ..at ");
-			} else {
-				log.error("Cannot call " + methodName + ", StackTrace size is:" + thr.getStackTrace().length);
-			}
-		} catch (Exception ex) {
-			log.error("Exception calling message processor: " + ex.toString());
-		}
-		return result;
-	}
+  /**
+   * Routes incoming messages from the server, after potentially persisting
+   * them.
+   */
+  public void routeMessage (Object message)
+  {
+    Class<?> clazz = message.getClass();
+    if (null != persisters.get(clazz))
+      persist(message);
+    
+    log.debug("Route " + clazz.getName());
+    Set<Object> targets = registrations.get(clazz);
+    if (targets == null) {
+      log.warn("no targets for message of type " + clazz.getName());
+      return;
+    }
+    for (Object target: targets) {
+      log.trace("dipatching to:" + target.getClass().getName());
+      dispatch(target, "handleMessage", message);
+    }
+  }
 
+  static public Object dispatch (Object target, String methodName,
+                                 Object... args)
+  {
+    Logger log = Logger.getLogger(target.getClass().getName());
+    Object result = null;
+    try {
+      Class[] classes = new Class[args.length];
+      for (int index = 0; index < args.length; index++) {
+        // log.debug("arg class: " + args[index].getClass().getName());
+        classes[index] = (args[index].getClass());
+      }
+      // see if we can find the method directly
+      Method method = target.getClass().getMethod(methodName, classes);
+      log.debug("found method " + method);
+      result = method.invoke(target, args);
+    }
+    catch (NoSuchMethodException nsm) {
+      log.debug("Could not find exact match: " + nsm.toString());
+    }
+    catch (InvocationTargetException ite) {
+      Throwable thr = ite.getTargetException();
+
+      if (thr.getStackTrace().length > 3) {
+        log.error("Cannot call " + methodName + ": " + thr + "\n  ..at "
+                  + thr.getStackTrace()[0] + "\n  ..at "
+                  + thr.getStackTrace()[1] + "\n  ..at "
+                  + thr.getStackTrace()[2] + "\n  ..at "
+                  + thr.getStackTrace()[3] + "\n  ..at ");
+      }
+      else {
+        log.error("Cannot call " + methodName + ", StackTrace size is:"
+                  + thr.getStackTrace().length);
+      }
+    }
+    catch (Exception ex) {
+      log.error("Exception calling message processor: " + ex.toString());
+    }
+    return result;
+  }
+
+  // ------------ Message persistence adapters ---------------
+  public void persistMessage (Competition comp)
+  {
+    // comp needs to be the "current competition"
+    Competition.setCurrent(comp);
+
+    // record the customers and brokers
+    for (CustomerInfo customer: comp.getCustomers()) {
+      customerRepo.add(customer);
+    }
+    for (String username: comp.getBrokers()) {
+      brokerRepo.findOrCreateByUsername(username);
+    }
+  }
+  
+  public void persistMessage (TariffSpecification spec)
+  {
+    log.info("persisting spec " + spec.getId());
+    tariffRepo.addSpecification(spec);
+  }
+  
+  public void persistMessage (TimeslotUpdate tu)
+  {
+    // update timeslotRepo
+    timeslotRepo.findOrCreateBySerialNumber(tu.getLastEnabled());
+  }
+  
+  // persistence dispatcher
+  private void persist (Object message)
+  {
+    Method method = persisters.get(message.getClass());
+    try {
+      method.invoke(this, message);
+    }
+    catch (IllegalArgumentException e) {
+      e.printStackTrace();
+    }
+    catch (IllegalAccessException e) {
+      e.printStackTrace();
+    }
+    catch (InvocationTargetException e) {
+      e.printStackTrace();
+    }
+  }
+
+  // index all the persistMessage methods in this class
+  @Override
+  public void initialize ()
+  {
+    registrations = new HashMap<Class<?>, Set<Object>>();
+    persisters = new HashMap<Class<?>, Method>();
+    Method[] methods = this.getClass().getDeclaredMethods();
+    for (int i = 0; i < methods.length; i++) {
+      Method method = methods[i];
+      if (method.getName().equals("persistMessage")) {
+        Class<?>[] params = method.getParameterTypes();
+        persisters.put(params[0], method);
+      }
+    }
+  }
 }
