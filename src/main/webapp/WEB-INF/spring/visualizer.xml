@@ -54,9 +54,9 @@
         <bean
           id="visualizerService"
           class="org.powertac.visualizer.services.VisualizerService">
-          <property name="serverUrl" value="${visualizerService.serverUrl}"/>
-          <property name="machineName" value="${visualizerService.nodeName}"/>
-          <property name="tournamentUrl" value="${visualizerService.tournamentUrl}"/>
+          <property name="serverUrl" value="tcp://${simHost}:61616"/>
+          <property name="machineName" value="${simNode}"/>
+          <property name="tournamentUrl" value="${tournamentUrl}"/>
 	  <property name="visualizerLoginContext" value="/faces/visualizerLogin.jsp"/>
         </bean>
 	<!-- <bean id="visualizerBean" class="org.powertac.visualizer.beans.VisualizerBean"/>

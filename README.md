@@ -30,4 +30,4 @@ To deploy a war file, you typically need to be logged into the machine that's ho
     mvn tomcat7:deploy -DsimName=sim-node -DsimHost=sim-hostname -DtournamentUrl=tmUrl
 ```
 
-where `sim-hostname` is the hostname of the sim machine this visualizer is supporting, sim-node is the name of the node in the jenkins setup, and `tmUrl` is the root context of the tournament manager, typically `http://host:8080/TournamentScheduler`. You need to do this once for each sim-node. Once deployed, a visualizer running on machine called `viz.powertac.org` for sim-node called `powertac` on a host `sim.powertac.org` would be located at `http://viz.powertac.org:8080/visualizer/sim-node`.
+where `sim-hostname` is the hostname of the sim machine this visualizer is supporting, sim-node is the name of the node in the jenkins setup, and `tmUrl` is the root context of the tournament manager, typically `http://host:8080/TournamentScheduler`. You need to do this once for each sim-node. Once deployed, a visualizer running on machine called `viz.powertac.org` for sim-node called `powertac` on a host `sim.powertac.org` would be located at `http://viz.powertac.org:8080/visualizer/powertac`.

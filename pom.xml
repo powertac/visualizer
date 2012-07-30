@@ -238,7 +238,7 @@
               <value></value>
             </systemProperty>
             <systemProperty>
-              <name>nodeName</name>
+              <name>simHost</name>
               <value>localhost</value>
             </systemProperty>
             <!-- settings passed to Spring config visualizer.xml -->
@@ -252,10 +252,10 @@
             </systemProperty>
             <systemProperty>
               <name>visualizerService.nodeName</name>
-              <value>${simName}</value>
+              <value>${simNode}</value>
             </systemProperty>
           </systemProperties>
-          <contextPath>/visualizer/${simName}</contextPath>
+          <contextPath>/visualizer/${simNode}</contextPath>
 	</configuration>
       </plugin>
       
@@ -268,8 +268,9 @@
           <url>http://localhost:8080/manager/text</url>
           <username>admin</username>
           <password>admin</password>
-          <path>/visualizer/${simName}</path>
+          <path>/visualizer/${simNode}</path>
           <update>true</update>
+          <!-- 
           <systemProperties>
             <systemProperty>
               <name>visualizerService.tournamentUrl</name>
@@ -281,9 +282,9 @@
             </systemProperty>
             <systemProperty>
               <name>visualizerService.nodeName</name>
-              <value>${simName}</value>
+              <value>${simNode}</value>
             </systemProperty>
-          </systemProperties>
+          </systemProperties> -->
         </configuration>
       </plugin>
 

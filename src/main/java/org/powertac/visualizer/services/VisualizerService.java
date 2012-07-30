@@ -35,6 +35,8 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -72,7 +74,7 @@ import org.w3c.dom.Node;
 
 @Service
 public class VisualizerService
-  implements MessageListener, InitializingBean
+  implements MessageListener, InitializingBean, ServletContextListener
 {
   static private Logger log = Logger.getLogger(VisualizerService.class
           .getName());
@@ -105,8 +107,10 @@ public class VisualizerService
   private boolean running = false;
   
   // state parameters
-  private long tickPeriod = 30000l;
-  private long maxMsgInterval = 120000l;
+  private long tickPeriod = 30000l; // 30 sec
+  private long maxMsgInterval = 120000l; // 2 min
+  private long maxGameReadyInterval = 300000l; // 5 min
+  private long gameReadyAt = 0l;
   private long lastMsgTime = 0l;
   private Timer tickTimer = null;
   
@@ -164,6 +168,23 @@ public class VisualizerService
     tickTimer.schedule(stateTask, 10, tickPeriod);
     runStates();
   }
+
+  // ServletContextListener callbacks
+  @Override
+  public void contextInitialized (ServletContextEvent sce)
+  {
+    // Nothing to do here    
+  }
+
+  @Override
+  public void contextDestroyed (ServletContextEvent sce)
+  {
+    // Kill the tick timer
+    if (null != tickTimer) {
+      tickTimer.cancel();
+    }
+  }
+
   
   // convience functions for handling the event queue
   private void putEvent (Event event)
@@ -259,6 +280,7 @@ public class VisualizerService
       public void entry ()
       {
         log.info("state gameReady");
+        gameReadyAt = new Date().getTime();
         gameLogin();
       }
       @Override
@@ -268,7 +290,14 @@ public class VisualizerService
           setCurrentState(loggedIn);
         }
         else if (event == Event.tick) {
-          pingServer(); // try again
+          long now = new Date().getTime();
+          // limit harrassment of running game
+          if (now > (gameReadyAt + maxGameReadyInterval)) {
+            setCurrentState(initial);
+          }
+          else {
+            pingServer(); // try again
+          }
         }
       }
     };
