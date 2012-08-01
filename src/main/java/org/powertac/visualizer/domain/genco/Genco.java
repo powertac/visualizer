@@ -92,7 +92,7 @@ public class Genco implements TimeslotModelUpdate {
 	}
 	@Override
 	public String toString() {
-		return "Genco: "+this.broker.getUsername()+", apiKey: "+this.broker.getKey();
+		return "Genco " + this.broker.getUsername();
 	}
 	public String getId() {
 		return id;

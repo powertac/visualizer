@@ -87,7 +87,7 @@ implements Initializable
       return;
     }
     for (Object target: targets) {
-      log.trace("dipatching to:" + target.getClass().getName());
+      log.trace("dispatching to:" + target.getClass().getName());
       dispatch(target, "handleMessage", message);
     }
   }
@@ -115,15 +115,16 @@ implements Initializable
       Throwable thr = ite.getTargetException();
 
       if (thr.getStackTrace().length > 3) {
-        log.error("Cannot call " + methodName + ": " + thr + "\n  ..at "
+        log.error("Cannot call " + methodName + "(" + args[0].getClass().getName()
+                  + "): " + thr.toString() + "\n  ..at "
                   + thr.getStackTrace()[0] + "\n  ..at "
                   + thr.getStackTrace()[1] + "\n  ..at "
                   + thr.getStackTrace()[2] + "\n  ..at "
                   + thr.getStackTrace()[3] + "\n  ..at ");
       }
       else {
-        log.error("Cannot call " + methodName + ", StackTrace size is:"
-                  + thr.getStackTrace().length);
+        log.error("Cannot call " + methodName + "(" + args[0].getClass().getName()
+                  + "): " + thr.toString());
       }
     }
     catch (Exception ex) {

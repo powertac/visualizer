@@ -22,7 +22,7 @@ package org.powertac.visualizer.services;
 public interface VisualizerState
 {
   /** possible event types */
-  public static enum Event {tick, noTm, accept, vsr, simEnd};
+  public static enum Event {tick, noTm, accept, vsr, simEnd, quit};
 
   /**
    * Come here on state entry

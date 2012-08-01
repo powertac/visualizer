@@ -112,7 +112,7 @@ public class VisualizerService
   private long maxGameReadyInterval = 300000l; // 5 min
   private long gameReadyAt = 0l;
   private long lastMsgTime = 0l;
-  private Timer tickTimer = null;
+  private boolean runningStates = true;
   
   // States
   private VisualizerState initial, loginWait, gameWait, gameReady, loggedIn;
@@ -120,7 +120,17 @@ public class VisualizerService
   
   // event queue
   private BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<Event>();
+  
+  // message queue
+  private BlockingQueue<Object> messageQueue = new LinkedBlockingQueue<Object>();
 
+  // Timers, Threads and Runnables that may need to be killed
+  private Timer tickTimer = null;
+  private TimerTask tickTask = null;
+  private Thread messageFeeder = null;
+  private TimerTask stateTask = null;
+  
+  
   @Autowired
   private MessageDispatcher dispatcher;
 
@@ -141,7 +151,7 @@ public class VisualizerService
       PatternLayout logLayout = new PatternLayout("%r %-5p %c{2}: %m%n");
       FileAppender logFile
           = new FileAppender(logLayout,
-                             ("log/viz.log"),
+                             ("log/" + machineName + "-viz.log"),
                              false);
       root.addAppender(logFile);
     }
@@ -151,17 +161,18 @@ public class VisualizerService
     }
     
     // Start the message feeder
-    Thread messageFeeder = new Thread(messagePump);
+    messageFeeder = new Thread(messagePump);
+    messageFeeder.setDaemon(true);
     messageFeeder.start();
 
     // Start the state machine
-    tickTimer = new Timer();
+    tickTimer = new Timer(true);
     TimerTask stateTask = new TimerTask() {
       @Override
       public void run ()
       {
-        log.info("message count = " +
-                           visualizerBean.getMessageCount());
+        log.debug("message count = " + visualizerBean.getMessageCount() +
+                  ", queue size = " + messageQueue.size());
         putEvent(Event.tick);
       }
     };
@@ -176,12 +187,28 @@ public class VisualizerService
     // Nothing to do here    
   }
 
+  // Wipe out timers and threads when servlet context is destroyed.
   @Override
   public void contextDestroyed (ServletContextEvent sce)
   {
+    log.info("contextDestroyed - kill threads and tasks");
     // Kill the tick timer
     if (null != tickTimer) {
       tickTimer.cancel();
+    }
+    tickTask.cancel();
+    
+    // Kill the state machine
+    runningStates = false;
+    putEvent(Event.quit);
+
+    // Kill the message pump
+    messageFeeder.interrupt();
+    try {
+      messageFeeder.join();
+    }
+    catch (InterruptedException e) {
+      e.printStackTrace();
     }
   }
 
@@ -217,6 +244,8 @@ public class VisualizerService
   // Run the viz state machine -- called from timer thread.
   private void runStates ()
   {
+    runningStates = true;
+    
     initial = new VisualizerState () {
       @Override
       public void entry ()
@@ -321,7 +350,7 @@ public class VisualizerService
     };
     
     setCurrentState(initial);
-    while (true) {
+    while (runningStates) {
       currentState.handleEvent(getEvent());
     }
   }
@@ -461,6 +490,9 @@ public class VisualizerService
   // shut down the queue at end-of-game, wait a few seconds, go again.
   public void shutDown ()
   {
+    // no longer initialized
+    initialized = false;
+    
     log.info("shut down proxy");
 
     proxy.shutDown();
@@ -487,8 +519,6 @@ public class VisualizerService
       }
     }
   };
-
-  private BlockingQueue<Object> messageQueue = new LinkedBlockingQueue<Object>();
 
   // convience functions for handling the event queue
   private void putMessage (Object message)
@@ -586,7 +616,7 @@ public class VisualizerService
   @Override
   public void afterPropertiesSet () throws Exception
   {
-    Timer initTimer = new Timer();
+    Timer initTimer = new Timer(true);
     // delay to let deployment complete
     initTimer.schedule(new TimerTask () {
       @Override

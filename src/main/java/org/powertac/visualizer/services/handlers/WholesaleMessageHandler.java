@@ -82,25 +82,6 @@ public class WholesaleMessageHandler implements Initializable
 
     SortedSet<OrderbookOrder> asks = orderbook.getAsks();
     SortedSet<OrderbookOrder> bids = orderbook.getBids();
-    StringBuilder builder = new StringBuilder();
-    builder.append("\nBids:\n");
-    for (Iterator<OrderbookOrder> iterator = bids.iterator(); iterator
-            .hasNext();) {
-      OrderbookOrder orderbookOrder = (OrderbookOrder) iterator.next();
-      builder.append("\nLimitPrice: " + orderbookOrder.getLimitPrice()
-                     + " mWh: " + orderbookOrder.getMWh());
-    }
-    builder.append("\nAsks:\n");
-    for (Iterator<OrderbookOrder> iterator = asks.iterator(); iterator
-            .hasNext();) {
-      OrderbookOrder orderbookOrder = (OrderbookOrder) iterator.next();
-      builder.append("\nLimitPrice: " + orderbookOrder.getLimitPrice()
-                     + " mWh: " + orderbookOrder.getMWh());
-    }
-
-    builder.append("\n\n Clearing price: " + orderbook.getClearingPrice()
-                   + "\nTimeslot\n Serial Number: "
-                   + orderbook.getTimeslot().getSerialNumber());
 
     // wholesale model:
     // orderbook and cleared trade are received one timeslot later than
@@ -118,8 +99,29 @@ public class WholesaleMessageHandler implements Initializable
       snapshot.close();
       checkWholesaleMarket(market);
     }
-    log.debug(builder.toString());
+    
+    if (log.isDebugEnabled()) {
+      StringBuilder builder = new StringBuilder();
+      builder.append("\nBids:\n");
+      for (Iterator<OrderbookOrder> iterator = bids.iterator(); iterator
+              .hasNext();) {
+        OrderbookOrder orderbookOrder = (OrderbookOrder) iterator.next();
+        builder.append("\nLimitPrice: " + orderbookOrder.getLimitPrice()
+                       + " mWh: " + orderbookOrder.getMWh());
+      }
+      builder.append("\nAsks:\n");
+      for (Iterator<OrderbookOrder> iterator = asks.iterator(); iterator
+              .hasNext();) {
+        OrderbookOrder orderbookOrder = (OrderbookOrder) iterator.next();
+        builder.append("\nLimitPrice: " + orderbookOrder.getLimitPrice()
+                       + " mWh: " + orderbookOrder.getMWh());
+      }
 
+      builder.append("\n\n Clearing price: " + orderbook.getClearingPrice()
+                     + "\nTimeslot\n Serial Number: "
+                     + orderbook.getTimeslot().getSerialNumber());
+      log.debug(builder.toString());
+    }
   }
 
   private void checkWholesaleMarket (WholesaleMarket market)
