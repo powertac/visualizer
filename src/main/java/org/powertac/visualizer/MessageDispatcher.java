@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class MessageDispatcher
-implements Initializable
+//implements Initializable
 {
   static private Logger log = Logger.getLogger(MessageDispatcher.class);
 
@@ -179,7 +179,6 @@ implements Initializable
   }
 
   // index all the persistMessage methods in this class
-  @Override
   public void initialize ()
   {
     registrations = new HashMap<Class<?>, Set<Object>>();

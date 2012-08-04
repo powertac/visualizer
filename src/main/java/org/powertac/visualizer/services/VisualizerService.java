@@ -471,6 +471,7 @@ public class VisualizerService
 
     // visualizerLogService.startLog(visualizerBean.getVisualizerRunCount());
 
+    dispatcher.initialize();
     // registrations for message listeners:
     List<Initializable> initializers =
       VisualizerApplicationContext.listBeansOfType(Initializable.class);
