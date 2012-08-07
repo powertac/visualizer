@@ -149,10 +149,13 @@ public class VisualizerService
     root.removeAllAppenders();
     try {
       PatternLayout logLayout = new PatternLayout("%r %-5p %c{2}: %m%n");
-      FileAppender logFile
-          = new FileAppender(logLayout,
-                             ("log/" + machineName + "-viz.log"),
-                             false);
+      String logPath = System.getProperty("catalina.base", "");
+      if (!logPath.isEmpty()) {
+        logPath += "/logs/" + machineName + "-viz.log";
+      } else {
+        logPath += "log/" + machineName + "-viz.log";
+      }
+      FileAppender logFile = new FileAppender(logLayout, logPath, false);
       root.addAppender(logFile);
     }
     catch (IOException ioe) {
