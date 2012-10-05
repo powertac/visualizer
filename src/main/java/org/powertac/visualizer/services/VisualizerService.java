@@ -282,8 +282,11 @@ public class VisualizerService
         if (event == Event.noTm) {
           setCurrentState(gameWait);
         }
-        else if (event == Event.accept){
+        else if (event == Event.accept) {
           setCurrentState(gameReady);
+        }
+        else if (event == Event.tick) {
+          tournamentLogin();
         }
       }
     };
@@ -372,8 +375,8 @@ public class VisualizerService
             "?machineName=" + machineName;
     log.info("tourney url=" + urlString);
     URL url;
-    boolean tryAgain = true;
-    while (tryAgain) {
+    //boolean tryAgain = true;
+    //while (tryAgain) {
       try {
         url = new URL(urlString);
         URLConnection conn = url.openConnection();
@@ -420,7 +423,7 @@ public class VisualizerService
           System.out.printf("Login message receieved:  queueName=%s, serverQueue=%s\n",
                             queueName, serverQueue);
           putEvent(Event.accept);
-          tryAgain = false;
+          //tryAgain = false;
         }
         else {
           // this is not working
@@ -431,7 +434,7 @@ public class VisualizerService
         // should we have an event here?
         e.printStackTrace();
       }
-    }    
+    //}    
   }
   
   // Attempt to log into a game.
