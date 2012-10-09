@@ -57,6 +57,7 @@ import org.powertac.visualizer.interfaces.Initializable;
 import org.powertac.visualizer.services.VisualizerState.Event;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.connection.CachingConnectionFactory;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessageCreator;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
@@ -706,13 +707,24 @@ public class VisualizerService
       log.info("Server URL: " + getServerUrl() + ", queue: " + getQueueName());
       this.host = host;
       
+      ActiveMQConnectionFactory amqConnectionFactory = null;
       if (connectionFactory instanceof PooledConnectionFactory) {
         PooledConnectionFactory pooledConnectionFactory = (PooledConnectionFactory) connectionFactory;
         if (pooledConnectionFactory.getConnectionFactory() instanceof ActiveMQConnectionFactory) {
-          ActiveMQConnectionFactory amqConnectionFactory = (ActiveMQConnectionFactory) pooledConnectionFactory
-                  .getConnectionFactory();
-          amqConnectionFactory.setBrokerURL(getServerUrl());
+          amqConnectionFactory = (ActiveMQConnectionFactory) pooledConnectionFactory
+              .getConnectionFactory();
         }
+      }
+      else if (connectionFactory instanceof CachingConnectionFactory) {
+        CachingConnectionFactory cachingConnectionFactory = (CachingConnectionFactory) connectionFactory;
+        if (cachingConnectionFactory.getTargetConnectionFactory() instanceof ActiveMQConnectionFactory) {
+          amqConnectionFactory = (ActiveMQConnectionFactory) cachingConnectionFactory
+              .getTargetConnectionFactory();
+        }
+      }
+
+      if (amqConnectionFactory != null) {
+        amqConnectionFactory.setBrokerURL(getServerUrl());
       }
 
       // register host as listener
