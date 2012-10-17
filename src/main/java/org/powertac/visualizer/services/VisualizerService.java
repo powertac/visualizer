@@ -28,6 +28,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
@@ -127,10 +128,9 @@ public class VisualizerService
 
   // Timers, Threads and Runnables that may need to be killed
   private Timer tickTimer = null;
-  private TimerTask tickTask = null;
-  private Thread messageFeeder = null;
   private TimerTask stateTask = null;
-  
+  private Thread messageFeeder = null;
+
   
   @Autowired
   private MessageDispatcher dispatcher;
@@ -171,7 +171,7 @@ public class VisualizerService
 
     // Start the state machine
     tickTimer = new Timer(true);
-    TimerTask stateTask = new TimerTask() {
+    stateTask = new TimerTask() {
       @Override
       public void run ()
       {
@@ -196,12 +196,23 @@ public class VisualizerService
   public void contextDestroyed (ServletContextEvent sce)
   {
     log.info("contextDestroyed - kill threads and tasks");
+    try {
+      cleanUp();
+    } catch (Exception ignored) {
+      log.error("Error destroying context");
+    }
+  }
+
+  @PreDestroy
+  private void cleanUp () throws Exception
+  {
     // Kill the tick timer
     if (null != tickTimer) {
       tickTimer.cancel();
+      tickTimer = null;
     }
-    tickTask.cancel();
-    
+    stateTask.cancel();
+
     // Kill the state machine
     runningStates = false;
     putEvent(Event.quit);
@@ -376,66 +387,54 @@ public class VisualizerService
             "?machineName=" + machineName;
     log.info("tourney url=" + urlString);
     URL url;
-    //boolean tryAgain = true;
-    //while (tryAgain) {
-      try {
-        url = new URL(urlString);
-        URLConnection conn = url.openConnection();
-        InputStream input = conn.getInputStream();
-        log.info("Parsing message..");
-        DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory
-                .newInstance();
-        DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-        Document doc = docBuilder.parse(input);
+    try {
+      url = new URL(urlString);
+      URLConnection conn = url.openConnection();
+      InputStream input = conn.getInputStream();
+      log.info("Parsing message..");
+      DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory
+              .newInstance();
+      DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+      Document doc = docBuilder.parse(input);
 
-        doc.getDocumentElement().normalize();
+      doc.getDocumentElement().normalize();
 
-        // Two different message types
-        Node retryNode = doc.getElementsByTagName("retry").item(0);
-        Node loginNode = doc.getElementsByTagName("login").item(0);
+      // Two different message types
+      Node retryNode = doc.getElementsByTagName("retry").item(0);
+      Node loginNode = doc.getElementsByTagName("login").item(0);
 
-        if (retryNode != null) {
-          String checkRetry = retryNode.getFirstChild()
-                  .getNodeValue();
-          //log.info("Retry in " + checkRetry
-          //         + " seconds");
-          log.info("Retry in " + checkRetry + " seconds");
-          // Received retry message; spin and try again
-          try {
-            Thread.sleep(Integer.parseInt(checkRetry) * 1000);
-          }
-          catch (InterruptedException e) {
-            e.printStackTrace();
-          }
+      if (retryNode != null) {
+        String checkRetry = retryNode.getFirstChild()
+                .getNodeValue();
+        log.info("Retry in " + checkRetry + " seconds");
+        // Received retry message; spin and try again
+        try {
+          Thread.sleep(Integer.parseInt(checkRetry) * 1000);
         }
-        else if (loginNode != null) {
-          log.info("Login response received! ");
-
-          String checkQueue = 
-                  doc.getElementsByTagName("queueName")
-                  .item(0).getFirstChild().getNodeValue();
-          queueName = checkQueue;
-          String checkSvrQueue = 
-                  doc.getElementsByTagName("serverQueue")
-                  .item(0).getFirstChild().getNodeValue();
-          serverQueue = checkSvrQueue;
-          log.info("queueName=" + checkQueue);
-
-          System.out.printf("Login message receieved:  queueName=%s, serverQueue=%s\n",
-                            queueName, serverQueue);
-          putEvent(Event.accept);
-          //tryAgain = false;
-        }
-        else {
-          // this is not working
-          log.info("Invalid response from TS");
+        catch (InterruptedException e) {
+          e.printStackTrace();
         }
       }
-      catch (Exception e) {
-        // should we have an event here?
-        e.printStackTrace();
+      else if (loginNode != null) {
+        log.info("Login response received! ");
+        queueName = doc.getElementsByTagName("queueName")
+            .item(0).getFirstChild().getNodeValue();
+        serverQueue = doc.getElementsByTagName("serverQueue")
+            .item(0).getFirstChild().getNodeValue();
+        log.info(String.format(
+            "Login message receieved: queueName=%s, serverQueue=%s",
+            queueName, serverQueue));
+        putEvent(Event.accept);
       }
-    //}    
+      else {
+        // this is not working
+        log.info("Invalid response from TS");
+      }
+    }
+    catch (Exception e) {
+      // should we have an event here?
+      e.printStackTrace();
+    }
   }
   
   // Attempt to log into a game.
@@ -523,7 +522,15 @@ public class VisualizerService
     {
       while (true) {
         Object msg = getMessage();
-        receiveMessage(msg);
+        if (msg instanceof InterruptedException) {
+          if (tickTimer == null) {
+            break;
+          } else {
+            ((InterruptedException) msg).printStackTrace();
+          }
+        } else {
+	        receiveMessage(msg);
+				}
       }
     }
   };
@@ -545,8 +552,7 @@ public class VisualizerService
       return messageQueue.take();
     }
     catch (InterruptedException e) {
-      e.printStackTrace();
-      return null;
+      return e;
     }
   }
 
