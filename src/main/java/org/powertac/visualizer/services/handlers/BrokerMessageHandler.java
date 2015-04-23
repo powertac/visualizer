@@ -1,11 +1,5 @@
 package org.powertac.visualizer.services.handlers;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.log4j.Logger;
 import org.powertac.common.BalancingTransaction;
 import org.powertac.common.CashPosition;
@@ -32,6 +26,12 @@ import org.powertac.visualizer.statistical.FinanceDynamicData;
 import org.powertac.visualizer.statistical.TariffCategory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 //import org.apache.tools.ant.taskdefs.Tstamp;
 
 @Service
@@ -55,12 +55,12 @@ public class BrokerMessageHandler implements Initializable
 
   public void initialize ()
   {
-    for (Class<?> clazz: Arrays.asList(Competition.class,
-                                       TariffSpecification.class,
-                                       CashPosition.class,
-                                       TariffTransaction.class,
-                                       DistributionTransaction.class,
-                                       BalancingTransaction.class)) {
+    for (Class<?> clazz : Arrays.asList(Competition.class,
+        TariffSpecification.class,
+        CashPosition.class,
+        TariffTransaction.class,
+        DistributionTransaction.class,
+        BalancingTransaction.class)) {
       router.registerMessageHandler(this, clazz);
     }
   }
@@ -71,12 +71,12 @@ public class BrokerMessageHandler implements Initializable
 
     ArrayList<BrokerModel> list = new ArrayList<BrokerModel>();
     ConcurrentHashMap<String, BrokerModel> map =
-      new ConcurrentHashMap<String, BrokerModel>(10, 0.75f, 1);
+        new ConcurrentHashMap<String, BrokerModel>(10, 0.75f, 1);
 
-    for (Iterator<String> iterator = brokersName.iterator(); iterator.hasNext();) {
+    for (Iterator<String> iterator = brokersName.iterator(); iterator.hasNext(); ) {
       String name = (String) iterator.next();
       BrokerModel brokerModel =
-        new BrokerModel(name, appearanceListBean.getAppereance());
+          new BrokerModel(name, appearanceListBean.getAppereance());
       list.add(brokerModel);
       map.put(brokerModel.getName(), brokerModel);
     }
@@ -94,16 +94,16 @@ public class BrokerMessageHandler implements Initializable
   {
     if (tariffSpecification.getSupersedes() != null) {
       log.debug("NO of tariffspec:"
-                + tariffSpecification.getSupersedes().size());
+          + tariffSpecification.getSupersedes().size());
     }
 
     // find matching broker and add received tariff spec. to its history.
     BrokerModel brokerModel =
-      brokerService.findBrokerByName(tariffSpecification.getBroker()
-              .getUsername());
+        brokerService.findBrokerByName(tariffSpecification.getBroker()
+            .getUsername());
     if (brokerModel != null) {
       brokerModel.getTariffCategory()
-              .processTariffSpecification(tariffSpecification);
+          .processTariffSpecification(tariffSpecification);
     }
   }
 
@@ -112,87 +112,92 @@ public class BrokerMessageHandler implements Initializable
 
     // update balance, if such broker exists
     BrokerModel broker =
-      brokerService.findBrokerByName(msg.getBroker().getUsername());
+        brokerService.findBrokerByName(msg.getBroker().getUsername());
     if (broker != null) {
       FinanceCategory fc = broker.getFinanceCategory();
       int tsIndex = vizBean.getCurrentTimeslotSerialNumber();
       ConcurrentHashMap<Integer, FinanceDynamicData> fddMap =
-        fc.getFinanceDynamicDataMap();
+          fc.getFinanceDynamicDataMap();
       if (!fddMap.containsKey(tsIndex)) {
         FinanceDynamicData fdd =
-          new FinanceDynamicData(fc.getProfit(), tsIndex);
+            new FinanceDynamicData(fc.getProfit(), tsIndex);
         fc.setLastFinanceDynamicData(fdd);
         fddMap.put(tsIndex, fdd);
       }
       fddMap.get(tsIndex).updateProfit(msg.getBalance());
       fc.setProfit(msg.getBalance());
     }
-
   }
 
   public void handleMessage (TariffTransaction msg)
   {
     // broker, not genco:
     BrokerModel broker =
-      brokerService.findBrokerByName(msg.getBroker().getUsername());
-    if (broker != null) {
-      gradingBean.addCharge(Math.abs(msg.getCharge()));
-      if (msg.getTxType() == Type.SIGNUP) {
-        broker.getTariffCategory().addCustomers(msg.getCustomerCount());
-      }
+        brokerService.findBrokerByName(msg.getBroker().getUsername());
+    if (broker == null) {
+      return;
+    }
 
-      if (msg.getTxType() == Type.CONSUME) {
-        gradingBean.addSoldEnergyTariffMarket(Math.abs(msg.getKWh()));
-        broker.getTariffCategory()
-                .addConsumptionConsumers(msg.getCustomerCount());
-        broker.getTariffCategory().addSoldEnergy(Math.abs(msg.getKWh()));
-        broker.getTariffCategory().addMoneyFromSold(msg.getCharge());
-      }
-      if (msg.getTxType() == Type.PRODUCE) {
-        gradingBean.addBoughtEnergyTariffMarket(msg.getKWh());
-        broker.getTariffCategory().addBoughtEnergy(msg.getKWh());
-      }
-      TariffCategory tc = broker.getTariffCategory();
-      tc.addCharge(Math.abs(msg.getCharge()));
-      int tsIndex = msg.getPostedTimeslotIndex();
-      ConcurrentHashMap<Integer, TariffDynamicData> tddmap =
+    gradingBean.addCharge(Math.abs(msg.getCharge()));
+    if (msg.getTxType() == Type.SIGNUP) {
+      broker.getTariffCategory().addCustomers(msg.getCustomerCount());
+    }
+
+    if (msg.getTxType() == Type.CONSUME) {
+      gradingBean.addSoldEnergyTariffMarket(Math.abs(msg.getKWh()));
+      broker.getTariffCategory()
+          .addConsumptionConsumers(msg.getCustomerCount());
+      broker.getTariffCategory().addSoldEnergy(Math.abs(msg.getKWh()));
+      broker.getTariffCategory().addMoneyFromSold(msg.getCharge());
+    }
+    if (msg.getTxType() == Type.PRODUCE) {
+      gradingBean.addBoughtEnergyTariffMarket(msg.getKWh());
+      broker.getTariffCategory().addBoughtEnergy(msg.getKWh());
+    }
+    TariffCategory tc = broker.getTariffCategory();
+    tc.addCharge(Math.abs(msg.getCharge()));
+    int tsIndex = msg.getPostedTimeslotIndex();
+    ConcurrentHashMap<Integer, TariffDynamicData> tddmap =
         tc.getTariffDynamicDataMap();
 
-      if (!tddmap.containsKey(tsIndex)) {
-        TariffDynamicData tdd =
+    if (!tddmap.containsKey(tsIndex)) {
+      TariffDynamicData tdd =
           new TariffDynamicData(tsIndex, tc.getProfit(), tc.getEnergy(),
-                                tc.getCustomerCount());
-        tc.addTariffDynamicData(tdd);
-      }
-      tc.update(tsIndex, msg.getKWh(), msg.getCharge(),
-                Helper.getCustomerCount(msg));
-      if (broker != null) {
-        broker.getTariffCategory()
-                .processTariffSpecification(msg.getTariffSpec());
-      }
-      tc.getTariffData().get(msg.getTariffSpec())
-              .setCustomers(Helper.getCustomerCount(msg));
-      broker.getTariffCategory().getTariffData().get(msg.getTariffSpec())
-              .processTariffTx(msg);
+              tc.getCustomerCount());
+      tc.addTariffDynamicData(tdd);
     }
+    tc.update(tsIndex, msg.getKWh(), msg.getCharge(),
+        Helper.getCustomerCount(msg));
+
+    if (msg.getTariffSpec() == null) {
+      // TODO GB
+      System.out.println("msg.getTariffSpec() == null!!!");
+      return;
+    }
+
+    broker.getTariffCategory()
+        .processTariffSpecification(msg.getTariffSpec());
+    tc.getTariffData().get(msg.getTariffSpec())
+        .setCustomers(Helper.getCustomerCount(msg));
+    broker.getTariffCategory().getTariffData().get(msg.getTariffSpec())
+        .processTariffTx(msg);
   }
 
   public void handleMessage (DistributionTransaction msg)
   {
     BrokerModel broker =
-      brokerService.findBrokerByName(msg.getBroker().getUsername());
+        brokerService.findBrokerByName(msg.getBroker().getUsername());
     if (broker != null) {
       DistributionCategory dc = broker.getDistributionCategory();
       dc.update(msg.getPostedTimeslotIndex(), msg.getKWh(), msg.getCharge());
       gradingBean.addEnergyDistribution(Math.abs(msg.getKWh()));
     }
-
   }
 
   public void handleMessage (BalancingTransaction bt)
   {
     BrokerModel broker =
-      brokerService.findBrokerByName(bt.getBroker().getUsername());
+        brokerService.findBrokerByName(bt.getBroker().getUsername());
     if (broker != null) {
       BalancingCategory bc = broker.getBalancingCategory();
       bc.update(bt.getPostedTimeslotIndex(), bt.getKWh(), bt.getCharge());

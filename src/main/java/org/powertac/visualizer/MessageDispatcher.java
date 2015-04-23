@@ -85,7 +85,7 @@ public class MessageDispatcher
     log.debug("Route " + clazz.getName());
     Set<Object> targets = registrations.get(clazz);
     if (targets == null) {
-      log.warn("no targets for message of type " + clazz.getName());
+      log.info("no targets for message of type " + clazz.getName());
       return;
     }
     for (Object target: targets) {

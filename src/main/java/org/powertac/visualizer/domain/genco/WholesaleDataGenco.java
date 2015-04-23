@@ -49,15 +49,4 @@ public class WholesaleDataGenco {
 	public double getTotalPrice() {
 		return totalPrice;
 	}
-
-	@SuppressWarnings("unchecked")
-	public ArrayList<MarketPosition> getMarketPositions() {
-		return (ArrayList<MarketPosition>) marketPositions.clone();
-	}
-
-	@SuppressWarnings("unchecked")
-	public ArrayList<MarketTransaction> getMarketTransactions() {
-		return (ArrayList<MarketTransaction>) marketTransactions.clone();
-	}
-
 }

@@ -1,18 +1,18 @@
 package org.powertac.visualizer.domain.broker;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 import org.powertac.common.CustomerInfo;
 import org.powertac.common.TariffTransaction;
 import org.powertac.visualizer.Helper;
 
+import java.util.ArrayList;
+import java.util.List;
+
+
 /**
  * Represents customer model that belongs to a particular broker.
- * 
+ *
  * @author Jurica Babic
- * 
  */
 public class CustomerModel
 {
@@ -56,7 +56,7 @@ public class CustomerModel
   {
     log.info("\n CustomerModel: my tariffTrans: +\n"
              + tariffTransaction.toString());
-    tariffTransactions.add(tariffTransaction);
+    //tariffTransactions.add(tariffTransaction);
     update(tariffTransaction);
   }
 
@@ -81,7 +81,6 @@ public class CustomerModel
 
   private void update (TariffTransaction tariffTransaction)
   {
-
     // for all txtypes:
     updateCash(tariffTransaction.getCharge());
     updateEnergy(tariffTransaction.getKWh());
@@ -90,12 +89,10 @@ public class CustomerModel
 
     // manage customerCount:
     customerCount += Helper.getCustomerCount(tariffTransaction);
-
   }
 
   private void updateEnergy (double kWh)
   {
-
     if (kWh > 0) {
       energyProduction += kWh;
     }
@@ -103,12 +100,11 @@ public class CustomerModel
       energyConsumption += kWh;
     }
     log.debug("\n energy consumption:" + energyConsumption
-              + " energy production:" + energyProduction);
+        + " energy production:" + energyProduction);
   }
 
   private void updateCash (double charge)
   {
-
     charge *= -1.0;
 
     if (charge > 0) {
@@ -164,5 +160,4 @@ public class CustomerModel
   {
     return energyProduction + energyConsumption;
   }
-
 }
