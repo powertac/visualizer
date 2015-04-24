@@ -16,6 +16,8 @@
 
 # editor temp files
 *~
+\#*
+.\#*
 
 # Deployment directories and runtime artifacts
 bin/
