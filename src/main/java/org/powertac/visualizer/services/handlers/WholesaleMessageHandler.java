@@ -1,9 +1,5 @@
 package org.powertac.visualizer.services.handlers;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.log4j.Logger;
 import org.powertac.common.ClearedTrade;
 import org.powertac.common.MarketPosition;
@@ -21,6 +17,9 @@ import org.powertac.visualizer.services.WholesaleService;
 import org.powertac.visualizer.statistical.WholesaleCategory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class WholesaleMessageHandler implements Initializable
@@ -43,13 +42,14 @@ public class WholesaleMessageHandler implements Initializable
 
   public void initialize ()
   {
+    /*
     for (Class<?> clazz: Arrays.asList(Order.class, Orderbook.class,
                                        ClearedTrade.class,
                                        MarketPosition.class,
                                        MarketTransaction.class)) {
       router.registerMessageHandler(this, clazz);
     }
-
+    */
   }
 
   /**

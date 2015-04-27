@@ -56,9 +56,9 @@ public class BrokerMessageHandler implements Initializable
   public void initialize ()
   {
     for (Class<?> clazz : Arrays.asList(Competition.class,
-        TariffSpecification.class,
+        //TariffSpecification.class,
         CashPosition.class,
-        TariffTransaction.class,
+        //TariffTransaction.class,
         DistributionTransaction.class,
         BalancingTransaction.class)) {
       router.registerMessageHandler(this, clazz);

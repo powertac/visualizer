@@ -29,7 +29,11 @@ public class GencoMessageHandler implements Initializable {
   private Boolean tournamentMode = false;
 
 	public void initialize() {
-		for (Class<?> clazz : Arrays.asList(CashPosition.class, MarketTransaction.class, MarketPosition.class)) {
+		for (Class<?> clazz : Arrays.asList(
+				CashPosition.class //,
+				//MarketTransaction.class,
+				//MarketPosition.class
+				)) {
 			router.registerMessageHandler(this, clazz);
 		}
 	}

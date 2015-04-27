@@ -1,13 +1,8 @@
 package org.powertac.visualizer.services.handlers;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 import org.powertac.common.BankTransaction;
 import org.powertac.common.Competition;
-import org.powertac.common.MarketPosition;
-import org.powertac.common.MarketTransaction;
 import org.powertac.common.msg.DistributionReport;
 import org.powertac.common.msg.SimEnd;
 import org.powertac.common.msg.SimPause;
@@ -28,9 +23,11 @@ import org.powertac.visualizer.interfaces.TimeslotCompleteActivation;
 import org.powertac.visualizer.push.GlobalPusher;
 import org.powertac.visualizer.push.InfoPush;
 import org.powertac.visualizer.services.PushService;
-import org.primefaces.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 public class VisualizerMessageHandler implements Initializable {
@@ -166,12 +163,20 @@ public class VisualizerMessageHandler implements Initializable {
 	}
 
 	public void initialize() {
-		for (Class<?> clazz : Arrays.asList(DistributionReport.class,
-				SimResume.class, SimEnd.class, BankTransaction.class,
-				SimPause.class, SimStart.class, TimeslotComplete.class,
-				TimeslotUpdate.class, TariffExpire.class,
-				TariffRevoke.class, TariffStatus.class, TariffUpdate.class)) {
-			router.registerMessageHandler(this, clazz);
+		for (Class<?> clazz : Arrays.asList(
+				DistributionReport.class,
+				SimResume.class,
+				SimEnd.class,
+				//BankTransaction.class,
+				SimPause.class,
+				SimStart.class,
+				TimeslotComplete.class,
+				TimeslotUpdate.class //,
+				//TariffExpire.class,
+				//TariffRevoke.class,
+				//TariffStatus.class,
+				//TariffUpdate.class
+				)){router.registerMessageHandler(this, clazz);
 		}
 	}
 }

@@ -29,7 +29,7 @@ public class CustomerMessageHandler implements Initializable
   public void initialize ()
   {
     for (Class<?> clazz: Arrays.asList(Competition.class,
-                                       TariffTransaction.class,
+                                       //TariffTransaction.class,
                                        CustomerBootstrapData.class)) {
       router.registerMessageHandler(this, clazz);
     }
