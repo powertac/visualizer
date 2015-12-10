@@ -65,8 +65,8 @@ public class WholesaleMarketBean implements Serializable
     ArrayList<Object> wholesaleTxDataOneTimeslot = new ArrayList<Object>();
 
     // brokers:
-    for (Iterator iterator = brokers.iterator(); iterator.hasNext();) {
-      BrokerModel brokerModel = (BrokerModel) iterator.next();
+    for (Iterator<BrokerModel> iterator = brokers.iterator(); iterator.hasNext();) {
+      BrokerModel brokerModel = iterator.next();
 
       ArrayList<Object> profitData = new ArrayList<Object>();
       ArrayList<Object> netMwhData = new ArrayList<Object>();
@@ -86,8 +86,8 @@ public class WholesaleMarketBean implements Serializable
       double totalProfit = 0;
       double totalEnergy = 0;
       // dynamic wholesale data:
-      for (Iterator iterator2 = dynDataSet.iterator(); iterator2.hasNext();) {
-        int key = (Integer) iterator2.next();
+      for (Iterator<Integer> iterator2 = dynDataSet.iterator(); iterator2.hasNext();) {
+        int key = iterator2.next();
         DynamicData dynData = dynDataMap.get(key);
 
         totalEnergy += dynData.getEnergyDelta();
@@ -131,14 +131,13 @@ public class WholesaleMarketBean implements Serializable
                                                                       - TIMESLOTS_TO_DISPLAY,
                         safetyTsIndex);// tom
 
-      for (Iterator iterator2 = mtxSortedSetSubset.iterator(); iterator2
+      for (Iterator<Integer> iterator2 = mtxSortedSetSubset.iterator(); iterator2
               .hasNext();) {
-        int key = (Integer) iterator2.next();
+        int key = iterator2.next();
 
         List<MarketTransaction> mtxList = mtxMap.get(key);
-        for (Iterator iterator3 = mtxList.iterator(); iterator3.hasNext();) {
-          MarketTransaction marketTransaction =
-            (MarketTransaction) iterator3.next();
+        for (Iterator<MarketTransaction> iterator3 = mtxList.iterator(); iterator3.hasNext();) {
+          MarketTransaction marketTransaction = iterator3.next();
           Object[] mtxEntry =
             { marketTransaction.getPrice(), marketTransaction.getMWh() };
           wholesaleTxBrokerData.add(mtxEntry);
@@ -196,13 +195,13 @@ public class WholesaleMarketBean implements Serializable
     ConcurrentHashMap<Long, Double> totalEnergyInTimeslot =
       new ConcurrentHashMap<Long, Double>();
 
-    for (Iterator iterator = allTrades.iterator(); iterator.hasNext();) {
-      ConcurrentHashMap<Long, ClearedTrade> concurrentHashMap =
-        (ConcurrentHashMap<Long, ClearedTrade>) iterator.next();
+    for (Iterator<ConcurrentHashMap<Long, ClearedTrade>> iterator
+                = allTrades.iterator(); iterator.hasNext();) {
+      ConcurrentHashMap<Long, ClearedTrade> concurrentHashMap = iterator.next();
       // collection:
       Collection<ClearedTrade> trades = concurrentHashMap.values();
-      for (Iterator iterator2 = trades.iterator(); iterator2.hasNext();) {
-        ClearedTrade ct = (ClearedTrade) iterator2.next();
+      for (Iterator<ClearedTrade> iterator2 = trades.iterator(); iterator2.hasNext();) {
+        ClearedTrade ct = iterator2.next();
 
         Object[] entry = { ct.getExecutionMWh(), ct.getExecutionPrice() };
         allClearedTrades.add(entry);
@@ -244,8 +243,8 @@ public class WholesaleMarketBean implements Serializable
       new TreeSet<Long>(totalPriceInTimeslot.keySet())
               .headSet(helper.getMillisForIndex(helper
                       .getSafetyWholesaleTimeslotIndex()), true);
-    for (Iterator totalIterator = sortedSet.iterator(); totalIterator.hasNext();) {
-      Long timeslot = (Long) totalIterator.next();
+    for (Iterator<Long> totalIterator = sortedSet.iterator(); totalIterator.hasNext();) {
+      Long timeslot = totalIterator.next();
       Double totalProfitTimeslot = totalPriceInTimeslot.get(timeslot);
       Object[] totalProfitOneTimeslot =
         { timeslot, totalProfitTimeslot / numberOfTransactions.get(timeslot),

@@ -33,8 +33,8 @@ public class WeatherBean implements Serializable {
 		
  
 		Set<Integer> keys = new TreeSet<Integer>(service.getReports().keySet());
-		for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
-			int key = (Integer) iterator.next();
+		for (Iterator<Integer> iterator = keys.iterator(); iterator.hasNext();) {
+			int key = iterator.next();
 			WeatherReport report = service.getReports().get(key);
 			long millis = helper.getMillisForIndex(key);
 

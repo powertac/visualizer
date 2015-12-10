@@ -122,16 +122,17 @@ public class BrokerService
     ArrayList<DynDataPusher> distributionPushers =
       new ArrayList<DynDataPusher>();
     ArrayList<FinancePusher> financePushers = new ArrayList<FinancePusher>();
-    ArrayList allWholesaleData = new ArrayList();
+    ArrayList<ArrayList<ArrayList<Double>>> allWholesaleData
+                  = new ArrayList<ArrayList<ArrayList<Double>>>();
     ArrayList<ArrayList<Double>> brokersOverview =
       new ArrayList<ArrayList<Double>>();
 
     NominationPusher np = null;
-    for (Iterator iterator = brokers.iterator(); iterator.hasNext();) {
+    for (Iterator<BrokerModel> iterator = brokers.iterator(); iterator.hasNext();) {
 
-      BrokerModel b = (BrokerModel) iterator.next();
+      BrokerModel b = iterator.next();
 
-      ArrayList<Object> wholesaleTxBrokerData = new ArrayList<Object>();
+      ArrayList<ArrayList<Double>> wholesaleTxBrokerData = new ArrayList<ArrayList<Double>>();
       ArrayList<Double> brokerOverview = new ArrayList<Double>();
 
       // Tariff market push
@@ -169,14 +170,13 @@ public class BrokerService
                                                                       - TIMESLOTS_TO_DISPLAY,
                         safetyTxIndex);// tom
 
-      for (Iterator iterator2 = mtxSortedSetSubset.iterator(); iterator2
+      for (Iterator<Integer> iterator2 = mtxSortedSetSubset.iterator(); iterator2
               .hasNext();) {
-        int key = (Integer) iterator2.next();
+        int key = iterator2.next();
 
         List<MarketTransaction> mtxList = mtxMap.get(key);
-        for (Iterator iterator3 = mtxList.iterator(); iterator3.hasNext();) {
-          MarketTransaction marketTransaction =
-            (MarketTransaction) iterator3.next();
+        for (Iterator<MarketTransaction> iterator3 = mtxList.iterator(); iterator3.hasNext();) {
+          MarketTransaction marketTransaction = iterator3.next();
           ArrayList<Double> transaction = new ArrayList<Double>();
           transaction.add(marketTransaction.getPrice());
           transaction.add(marketTransaction.getMWh());

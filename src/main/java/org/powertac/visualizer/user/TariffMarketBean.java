@@ -49,8 +49,8 @@ public class TariffMarketBean implements Serializable
 
     Collection<BrokerModel> brokers = brokerService.getBrokers();
     // brokers:
-    for (Iterator iterator = brokers.iterator(); iterator.hasNext();) {
-      BrokerModel brokerModel = (BrokerModel) iterator.next();
+    for (Iterator<BrokerModel> iterator = brokers.iterator(); iterator.hasNext();) {
+      BrokerModel brokerModel = iterator.next();
       Object customerStatisticsBroker;
       long[] customerType = new long[3];
       customerType[0] = 0; // consumption
@@ -178,9 +178,9 @@ public class TariffMarketBean implements Serializable
                                                              true);
 
       // dynamic tariff data:
-      for (Iterator iterator2 = keysTariffDynData.iterator(); iterator2
+      for (Iterator<Integer> iterator2 = keysTariffDynData.iterator(); iterator2
               .hasNext();) {
-        int key = (Integer) iterator2.next();
+        int key = iterator2.next();
         TariffDynamicData dynData = tariffDynData.get(key);
         Object[] timeCustomerCount =
           { helper.getMillisForIndex(key), dynData.getCustomerCount() };

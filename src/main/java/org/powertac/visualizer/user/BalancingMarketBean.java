@@ -43,8 +43,8 @@ public class BalancingMarketBean implements Serializable {
 		ArrayList<Object> balancingTxDataOneTimeslot = new ArrayList<Object>();
 
 		// brokers:
-		for (Iterator iterator = brokers.iterator(); iterator.hasNext();) {
-			BrokerModel brokerModel = (BrokerModel) iterator.next();
+		for (Iterator<BrokerModel> iterator = brokers.iterator(); iterator.hasNext();) {
+			BrokerModel brokerModel = iterator.next();
 
 			ArrayList<Object> profitData = new ArrayList<Object>();
 			ArrayList<Object> netKwhData = new ArrayList<Object>();
@@ -58,9 +58,9 @@ public class BalancingMarketBean implements Serializable {
 
 		
 			// dynamic balancing data:
-			for (Iterator iterator2 = dynDataSet.iterator(); iterator2
+			for (Iterator<Integer> iterator2 = dynDataSet.iterator(); iterator2
 					.hasNext();) {
-				int key = (Integer) iterator2.next();
+				int key = iterator2.next();
 				DynamicData dynData = dynDataMap.get(key);
 								
 				Object[] profit = { helper.getMillisForIndex(key),
