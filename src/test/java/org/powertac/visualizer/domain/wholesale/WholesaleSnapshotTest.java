@@ -25,13 +25,14 @@ public class WholesaleSnapshotTest {
   public void test() {
 
     Competition.newInstance("VizTest");
-    wholesaleSnapshot.addOrder(new Order(null,timeslot, -1.0, null));
-    wholesaleSnapshot.addOrder(new Order(null, timeslot, -2.0, 2.0));
-    wholesaleSnapshot.addOrder(new Order(null, timeslot, -3.0, 3.0));
+    int num = timeslot.getSerialNumber();
+    wholesaleSnapshot.addOrder(new Order(null, num, -1.0, null));
+    wholesaleSnapshot.addOrder(new Order(null, num, -2.0, 2.0));
+    wholesaleSnapshot.addOrder(new Order(null, num, -3.0, 3.0));
 
-    wholesaleSnapshot.addOrder(new Order(null, timeslot, 4.0, -4.0));
-    wholesaleSnapshot.addOrder(new Order(null, timeslot, 5.0, null));
-    wholesaleSnapshot.addOrder(new Order(null, timeslot, 6.0, -6.0));
+    wholesaleSnapshot.addOrder(new Order(null, num, 4.0, -4.0));
+    wholesaleSnapshot.addOrder(new Order(null, num, 5.0, null));
+    wholesaleSnapshot.addOrder(new Order(null, num, 6.0, -6.0));
 
     VisualizerOrderbook orderbookWithNulls = new VisualizerOrderbook(timeslot, 0.0, null).addAsk(new VisualizerOrderbookOrder(10, null)).addBid(new VisualizerOrderbookOrder(-10, null));
     wholesaleSnapshot.setOrderbook(orderbookWithNulls);

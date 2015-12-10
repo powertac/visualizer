@@ -5,8 +5,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.joda.time.Instant;
+import org.powertac.common.Timeslot;
 import org.powertac.common.WeatherForecast;
 import org.powertac.common.WeatherReport;
+import org.powertac.common.repo.TimeslotRepo;
 import org.powertac.visualizer.beans.VisualizerBean;
 import org.powertac.visualizer.interfaces.Recyclable;
 import org.powertac.visualizer.interfaces.TimeslotCompleteActivation;
@@ -39,6 +41,9 @@ public class WeatherInfoService implements Recyclable,
 	private VisualizerHelperService helper;
 	@Autowired
 	private VisualizerBean visualizerBean;
+	@Autowired
+	private TimeslotRepo timeslotRepo;
+
 
 	public WeatherInfoService() {
 		recycle();
@@ -72,8 +77,9 @@ public class WeatherInfoService implements Recyclable,
 
 	public void addReport(WeatherReport weatherReport) {
 		currentReport = weatherReport;
-		reports.put(weatherReport.getCurrentTimeslot().getSerialNumber(),
-				weatherReport);
+		int index = currentReport.getTimeslotIndex();
+		Timeslot slot = timeslotRepo.findBySerialNumber(index);
+		reports.put(slot.getSerialNumber(), weatherReport);
 
 	}
 
@@ -83,9 +89,10 @@ public class WeatherInfoService implements Recyclable,
 			// // do the push:
 			EventBus pushContext = EventBusFactory.getDefault().eventBus();
 			Gson gson = new Gson();
+			int index = currentReport.getTimeslotIndex();
+			Timeslot slot = timeslotRepo.findBySerialNumber(index);
 			WeatherPusher weather = new WeatherPusher(
-					helper.getMillisForIndex(currentReport.getCurrentTimeslot()
-							.getSerialNumber()),
+					helper.getMillisForIndex(slot.getSerialNumber()),
 					currentReport.getTemperature(),
 					currentReport.getWindSpeed(),
 					currentReport.getWindDirection(),
