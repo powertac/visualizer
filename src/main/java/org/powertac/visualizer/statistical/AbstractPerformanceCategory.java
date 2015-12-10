@@ -1,8 +1,6 @@
 package org.powertac.visualizer.statistical;
 
-import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.powertac.visualizer.domain.broker.BrokerModel;
 

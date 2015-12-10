@@ -4,13 +4,10 @@ import java.math.BigDecimal;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.joda.time.Chronology;
 import org.joda.time.Instant;
 import org.powertac.common.TariffTransaction;
 import org.primefaces.json.JSONArray;
 import org.primefaces.json.JSONException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 public class Helper {
 

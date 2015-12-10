@@ -1,17 +1,7 @@
 package org.powertac.visualizer.user;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-
-import javax.faces.application.FacesMessage;
-import javax.faces.context.FacesContext;
-
-import org.primefaces.context.RequestContext;
-import org.primefaces.push.PushContext;
-import org.primefaces.push.PushContextFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 
 public class ChatBean implements Serializable {
 

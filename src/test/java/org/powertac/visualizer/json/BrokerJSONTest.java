@@ -1,11 +1,13 @@
 package org.powertac.visualizer.json;
 
-import static org.junit.Assert.*;
+// TODO Remove this test?
 
-import org.junit.Before;
-import org.junit.Test;
-import org.primefaces.json.JSONException;
-import org.primefaces.json.JSONObject;
+//import static org.junit.Assert.*;
+
+//import org.junit.Before;
+//import org.junit.Test;
+//import org.primefaces.json.JSONException;
+//import org.primefaces.json.JSONObject;
 
 public class BrokerJSONTest {
 

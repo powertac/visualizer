@@ -1,7 +1,5 @@
 package org.powertac.visualizer.display;
 
-import java.util.ArrayList;
-
 /**
  * A template class which resembles the structure needed for HighStock charts
  * (JSON library).

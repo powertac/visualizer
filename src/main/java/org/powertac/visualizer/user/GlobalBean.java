@@ -4,8 +4,6 @@ import java.io.Serializable;
 
 import org.powertac.visualizer.beans.VisualizerBean;
 import org.powertac.visualizer.push.GlobalPusher;
-import org.powertac.visualizer.push.NominationPusher;
-import org.powertac.visualizer.push.WeatherPusher;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.gson.Gson;

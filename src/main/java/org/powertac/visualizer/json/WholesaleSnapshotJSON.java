@@ -1,7 +1,5 @@
 package org.powertac.visualizer.json;
 
-import java.awt.Color;
-
 import org.primefaces.json.JSONArray;
 
 public class WholesaleSnapshotJSON {

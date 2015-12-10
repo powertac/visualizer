@@ -1,12 +1,8 @@
 package org.powertac.visualizer.statistical;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.powertac.common.MarketTransaction;
-import org.powertac.common.Order;
-import org.powertac.visualizer.domain.broker.BrokerModel;
 
 /**
  * Aggregate wholesale data (all the clearings) for one timeslot from broker's

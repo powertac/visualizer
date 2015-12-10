@@ -1,11 +1,5 @@
 package org.powertac.visualizer.domain.wholesale;
 
-import org.powertac.common.IdGenerator;
-import org.powertac.common.OrderbookOrder;
-
-import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
-import com.thoughtworks.xstream.annotations.XStreamOmitField;
-
 /**
  * This is a convenient class for wholesale visualization. It is a copy of OrderbookOrder class. Purpose of this class is to avoid unnecessary entries created by original OrderbookOrder for Power TAC server STATE log.
  * @author Jurica Babic

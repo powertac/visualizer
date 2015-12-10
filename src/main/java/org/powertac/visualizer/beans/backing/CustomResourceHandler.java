@@ -8,7 +8,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import javax.el.ELContext;
 import javax.el.ValueExpression;
-import javax.faces.application.Resource;
 import javax.faces.application.ResourceHandler;
 import javax.faces.application.ResourceHandlerWrapper;
 import javax.faces.context.FacesContext;
@@ -16,7 +15,6 @@ import javax.servlet.http.HttpServletResponse;
 
 //import org.primefaces.application.PrimeResource;
 import org.primefaces.model.StreamedContent;
-import org.primefaces.util.Constants;
 
 public class CustomResourceHandler extends ResourceHandlerWrapper {
 

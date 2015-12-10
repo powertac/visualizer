@@ -1,7 +1,5 @@
 package org.powertac.visualizer.beans.backing;
 
-import org.powertac.common.MarketPosition;
-import org.powertac.common.TariffTransaction;
 import org.springframework.stereotype.Service;
 
 @Service

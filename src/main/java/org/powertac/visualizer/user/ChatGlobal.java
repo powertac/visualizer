@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import org.primefaces.push.EventBus;
 import org.primefaces.push.EventBusFactory;
-import org.springframework.stereotype.Service;
 
 //@Service
 public class ChatGlobal {
