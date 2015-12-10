@@ -9,7 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class GencosBean implements Serializable {
 
-	private GencoService gencoService;
+	@SuppressWarnings("unused") private GencoService gencoService;
+	
 	private List<Genco> list;
 	
 	@Autowired

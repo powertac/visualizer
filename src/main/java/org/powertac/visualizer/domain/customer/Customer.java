@@ -22,12 +22,12 @@ public class Customer implements TimeslotModelUpdate {
 
 	private CustomerInfo customerInfo;
 
-	private CustomerBootstrapData bootstrapData;
+	@SuppressWarnings("unused") private CustomerBootstrapData bootstrapData;
 
-	private double currentKWhProduced;
-	private double currentKWhConsumed;
-	private double currentInflowCharge;
-	private double currentOutflowCharge;
+	@SuppressWarnings("unused") private double currentKWhProduced;
+	@SuppressWarnings("unused") private double currentKWhConsumed;
+	@SuppressWarnings("unused") private double currentInflowCharge;
+	@SuppressWarnings("unused") private double currentOutflowCharge;
 
 
 	public Customer(CustomerInfo customerInfo) {

@@ -185,6 +185,7 @@ public class TariffData
 
   private class RatesGraphTemplate
   {
+    @SuppressWarnings("unused")
     ArrayList<Object> data;
 
     public RatesGraphTemplate (ArrayList<Object> data)

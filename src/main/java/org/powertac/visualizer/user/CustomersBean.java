@@ -20,11 +20,16 @@ public class CustomersBean implements Serializable
   private static final long serialVersionUID = 1L;
   private CustomerService customerService;
   private ArrayList<Customer> customers;
+  
+  @SuppressWarnings("unused")
   private UserSessionBean userSessionBean;
+  @SuppressWarnings("unused")
   private String wholesaleDynDataOneTimeslot;
+  
   @Autowired
   VisualizerHelperService helper;
 
+  @SuppressWarnings("unused")
   private List<String> tabs;
 
   private int customerType = 0;

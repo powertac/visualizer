@@ -2,12 +2,12 @@ package org.powertac.visualizer.push;
 
 
 public class WholesaleMarketPusher {
-	private String name;
-	private long millis;
-	private double  profit;
-	private double  energy;
-	private double  profitDelta;
-	private double  energyDelta;
+	@SuppressWarnings("unused") private String name;
+	@SuppressWarnings("unused") private long millis;
+	@SuppressWarnings("unused") private double  profit;
+	@SuppressWarnings("unused") private double  energy;
+	@SuppressWarnings("unused") private double  profitDelta;
+	@SuppressWarnings("unused") private double  energyDelta;
 	
 
 	public WholesaleMarketPusher(String name, long millis, double  profitDelta, double  energyDelta, double  profit, double  energy ) {

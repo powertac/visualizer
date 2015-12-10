@@ -22,7 +22,7 @@ public class CustomerInfoService
   CustomerService customerService;
 
   private ArrayList<Customer> customers;
-  private String wholesaleDynDataOneTimeslot;
+  @SuppressWarnings("unused") private String wholesaleDynDataOneTimeslot;
   private int customerType = 0;
 
   public ArrayList<Customer> getCustomers ()

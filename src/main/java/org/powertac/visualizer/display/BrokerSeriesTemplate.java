@@ -11,13 +11,13 @@ import java.util.ArrayList;
  */
 public class BrokerSeriesTemplate {
 
-	private String name;
-	private String color;
-	private ArrayList<Object> data;
-	private int yAxis;
-	private boolean step;
-	private boolean showInLegend;
-	private Tooltip tooltip = new Tooltip();
+	@SuppressWarnings("unused") private String name;
+	@SuppressWarnings("unused") private String color;
+	@SuppressWarnings("unused") private ArrayList<Object> data;
+	@SuppressWarnings("unused") private int yAxis;
+	@SuppressWarnings("unused") private boolean step;
+	@SuppressWarnings("unused") private boolean showInLegend;
+	@SuppressWarnings("unused") private Tooltip tooltip = new Tooltip();
 	
 
 	public BrokerSeriesTemplate(String name, String color,
@@ -65,7 +65,7 @@ public class BrokerSeriesTemplate {
 	}
 	
 	private class Tooltip{
-		private int valueDecimals = 2;
+		@SuppressWarnings("unused") private int valueDecimals = 2;
 	}
 
 }

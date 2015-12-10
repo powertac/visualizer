@@ -311,8 +311,8 @@ public class TariffMarketBean implements Serializable
 
   private class DrillDown
   {
-    String name;
-    ArrayList<Object> data;
+    @SuppressWarnings("unused") String name;
+    @SuppressWarnings("unused") ArrayList<Object> data;
 
     public DrillDown (String name, ArrayList<Object> data)
     {
@@ -324,8 +324,8 @@ public class TariffMarketBean implements Serializable
 
   private class PowerTypeTemplate
   {
-    String name;
-    long y;
+    @SuppressWarnings("unused") String name;
+    @SuppressWarnings("unused") long y;
 
     public PowerTypeTemplate (String name, long y)
     {

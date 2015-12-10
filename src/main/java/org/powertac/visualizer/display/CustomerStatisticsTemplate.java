@@ -9,10 +9,10 @@ package org.powertac.visualizer.display;
  */
 public class CustomerStatisticsTemplate {
 
-	private String name;
-	private String color;
-	private Object drilldown;
-	private long y;
+	@SuppressWarnings("unused") private String name;
+	@SuppressWarnings("unused") private String color;
+	@SuppressWarnings("unused") private Object drilldown;
+	@SuppressWarnings("unused") private long y;
 
 	public CustomerStatisticsTemplate(String name, String color, long y,
 			Object drilldown) {

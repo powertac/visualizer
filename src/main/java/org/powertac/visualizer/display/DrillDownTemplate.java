@@ -11,9 +11,9 @@ import java.util.ArrayList;
  */
 public class DrillDownTemplate {
 
-	private String name;
-	private String color;
-	private ArrayList<Object> data;
+	@SuppressWarnings("unused") private String name;
+	@SuppressWarnings("unused") private String color;
+	@SuppressWarnings("unused") private ArrayList<Object> data;
 
 	public DrillDownTemplate(String name, String color, ArrayList<Object> data) {
 		this.name = name;

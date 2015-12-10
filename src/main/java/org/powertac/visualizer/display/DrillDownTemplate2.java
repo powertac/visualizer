@@ -9,10 +9,10 @@ package org.powertac.visualizer.display;
  */
 public class DrillDownTemplate2 {
 
-	private String name;
-	private long y;
+	@SuppressWarnings("unused") private String name;
+	@SuppressWarnings("unused") private long y;
 	//private String color;
-	private Object drilldown;
+	@SuppressWarnings("unused") private Object drilldown;
 
 	public DrillDownTemplate2(String name, long y, Object drilldown) {
 		this.name = name;

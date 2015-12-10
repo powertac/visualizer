@@ -4,9 +4,9 @@ import java.util.ArrayList;
 
 public class GameOverviewTemplate {
 
-	private String name;
-	private ArrayList<Double> data;
-	private String pointPlacement;
+	@SuppressWarnings("unused") private String name;
+	@SuppressWarnings("unused") private ArrayList<Double> data;
+	@SuppressWarnings("unused") private String pointPlacement;
 
 	public GameOverviewTemplate(String name, ArrayList<Double> data) {
 		this.name = name;
