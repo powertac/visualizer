@@ -53,7 +53,6 @@ public class GencoService implements TimeslotCompleteActivation, Recyclable {
 		return gencoMap.get(username);
 	}
 
-	@SuppressWarnings("unchecked")
 	public List<Genco> getGencoList() {
 		return (List<Genco>) gencoMap.values();
 	}
