@@ -15,7 +15,11 @@ import com.google.gson.Gson;
 
 public class WeatherBean implements Serializable {
 
+	private static final long serialVersionUID = 1L;
+
 	private String temperatureData;
+
+
 	private String windSpeedData;
 	private String windDirectionData;
 	private String cloudCoverData;

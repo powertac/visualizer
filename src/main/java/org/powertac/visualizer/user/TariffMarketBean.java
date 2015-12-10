@@ -26,6 +26,7 @@ import com.google.gson.Gson;
 
 public class TariffMarketBean implements Serializable
 {
+  private static final long serialVersionUID = 1L;
 
   private String tariffDynData;
   private String tariffDynDataOneTimeslot;
@@ -58,6 +59,7 @@ public class TariffMarketBean implements Serializable
       customerType[2] = 0; // storage
       HashMap<PowerType, Long> customerTypeSpecific =
         new HashMap<PowerType, Long>() {
+          private static final long serialVersionUID = 1L;
           {
             put(PowerType.BATTERY_STORAGE, 0l);
             put(PowerType.CHP_PRODUCTION, 0l);

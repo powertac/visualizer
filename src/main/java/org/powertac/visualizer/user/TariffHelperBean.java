@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class TariffHelperBean implements Serializable
 {
+  private static final long serialVersionUID = 1L;
 
   @Autowired
   TariffMarketBean tariffMarketBean;

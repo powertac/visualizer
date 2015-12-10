@@ -10,6 +10,8 @@ import com.google.gson.Gson;
 
 public class GlobalBean implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
+
 	private GlobalPusher globalPusher;
 	
 	@Autowired
