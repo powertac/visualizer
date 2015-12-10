@@ -13,8 +13,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.joda.time.Instant;
 import org.powertac.common.MarketTransaction;
 import org.powertac.visualizer.beans.VisualizerBean;
@@ -65,8 +63,6 @@ public class BrokerService
   private VisualizerHelperService helper;
   @Autowired
   GradingService gradingBean;
-  
-  private static Logger log = LogManager.getLogger(BrokerService.class);
 
   private final int TIMESLOTS_TO_DISPLAY = 48;
 

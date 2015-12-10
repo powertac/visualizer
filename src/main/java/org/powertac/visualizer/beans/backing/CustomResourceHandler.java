@@ -2,7 +2,6 @@ package org.powertac.visualizer.beans.backing;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Map;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -61,8 +60,7 @@ public class CustomResourceHandler extends ResourceHandlerWrapper {
 	                }
 	                response.setStatus(200);
 	                
-	              //  response.getOutputStream().flush();
-	               OutputStream outputStream = response.getOutputStream();
+	                response.getOutputStream();
 	                context.responseComplete();
 
 	            } catch(Exception e) {

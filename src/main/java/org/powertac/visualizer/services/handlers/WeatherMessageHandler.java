@@ -2,8 +2,6 @@ package org.powertac.visualizer.services.handlers;
 
 
 import java.util.Arrays;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.powertac.common.WeatherForecast;
 import org.powertac.common.WeatherReport;
 import org.powertac.visualizer.MessageDispatcher;
@@ -15,7 +13,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class WeatherMessageHandler implements Initializable {
 
-	private Logger log = LogManager.getLogger(WeatherMessageHandler.class);
 	@Autowired
 	private WeatherInfoService service;
 

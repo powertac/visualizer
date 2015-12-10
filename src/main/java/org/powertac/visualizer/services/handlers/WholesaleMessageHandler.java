@@ -37,8 +37,8 @@ public class WholesaleMessageHandler implements Initializable
   private WholesaleService wholesaleService;
   @Autowired
   private BrokerService brokerService;
-  @Autowired
-  private VisualizerHelperService helper;
+  //@Autowired
+  //private VisualizerHelperService helper;
   @Autowired
   private GradingService gradingBean;
 

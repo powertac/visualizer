@@ -1,7 +1,5 @@
 package org.powertac.visualizer.domain.customer;
 
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.joda.time.Instant;
 import org.powertac.common.Competition;
 import org.powertac.common.CustomerInfo;
@@ -17,7 +15,7 @@ import org.powertac.visualizer.interfaces.TimeslotModelUpdate;
  * 
  */
 public class Customer implements TimeslotModelUpdate {
-	private Logger log = LogManager.getLogger(Customer.class);
+
 	private CustomerModel customerModel;
 
 	private CustomerInfo customerInfo;

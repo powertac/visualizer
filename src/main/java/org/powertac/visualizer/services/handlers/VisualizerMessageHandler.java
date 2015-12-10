@@ -20,7 +20,7 @@ import org.powertac.common.msg.TimeslotComplete;
 import org.powertac.common.msg.TimeslotUpdate;
 import org.powertac.visualizer.MessageDispatcher;
 import org.powertac.visualizer.VisualizerApplicationContext;
-import org.powertac.visualizer.beans.AppearanceListBean;
+//import org.powertac.visualizer.beans.AppearanceListBean;
 import org.powertac.visualizer.beans.VisualizerBean;
 import org.powertac.visualizer.interfaces.Initializable;
 import org.powertac.visualizer.interfaces.TimeslotCompleteActivation;
@@ -37,10 +37,10 @@ public class VisualizerMessageHandler implements Initializable {
 			.getLogger(VisualizerMessageHandler.class);
 	@Autowired
 	private VisualizerBean visualizerBean;
-	@Autowired
-	private VisualizerHelperService helper;
-	@Autowired
-	private AppearanceListBean appearanceListBean;
+	//@Autowired
+	//private VisualizerHelperService helper;
+	//@Autowired
+	//private AppearanceListBean appearanceListBean;
 	@Autowired
 	private MessageDispatcher router;
 	@Autowired
