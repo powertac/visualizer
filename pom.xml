@@ -5,7 +5,7 @@
 
   <artifactId>visualizer</artifactId>
   <packaging>war</packaging>
-  <version>1.4.1</version>
+  <version>1.4.2-SNAPSHOT</version>
 
   <name>Power TAC visualizer</name>
   <url>https://github.com/powertac/visualizer/</url>
@@ -381,7 +381,7 @@
     <connection>scm:git:git//github.com/powertac/visualizer.git</connection>
     <developerConnection>scm:git:git@github.com:powertac/visualizer.git</developerConnection>
     <url>https://github.com/powertac/visualizer/</url>
-    <tag>visualizer-1.4.1</tag>
+    <tag>HEAD</tag>
   </scm>
 
 </project>
